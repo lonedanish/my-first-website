@@ -1,23 +1,362 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My First Website</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #e0e7ff;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Navigation Bar */
+        nav {
+            background-color: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--card-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .nav-brand {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-main);
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .nav-links a.active {
+            color: #fff;
+            background-color: var(--primary);
+        }
+
+        .nav-links .btn-login {
+            border: 1px solid var(--primary);
+            color: var(--accent);
+        }
+
+        .nav-links .btn-login:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* Container Layout */
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1.5rem 3rem;
+        }
+
+        /* Hero / Welcome Section */
+        .hero-section {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(56, 189, 248, 0.08));
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero-section h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            background: linear-gradient(to right, #ffffff, var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-section p {
+            color: var(--text-muted);
+            font-size: 1.15rem;
+        }
+
+        /* Card Section */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 1.8rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+
+        .card h2 {
+            font-size: 1.4rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 0.5rem;
+        }
+
+        .card h3 {
+            font-size: 1.15rem;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        .about-text p {
+            margin-bottom: 0.8rem;
+            color: #cbd5e1;
+            font-size: 1.02rem;
+        }
+
+        /* Education Table */
+        .table-container {
+            overflow-x: auto;
+            margin: 1rem 0;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            background-color: #162032;
+        }
+
+        th {
+            background-color: #0b1120;
+            color: var(--accent);
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        td {
+            padding: 12px 16px;
+            color: #e2e8f0;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+            font-size: 0.95rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: rgba(56, 189, 248, 0.05);
+        }
+
+        .year-badge {
+            display: inline-block;
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        /* Contact Details */
+        .contact-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin-top: 0.8rem;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            color: #cbd5e1;
+        }
+
+        .contact-label {
+            font-weight: 600;
+            color: var(--text-muted);
+            min-width: 70px;
+        }
+
+        .contact-link {
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .contact-link:hover {
+            text-decoration: underline;
+            color: #7dd3fc;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            padding: 2rem 0;
+            border-top: 1px solid var(--card-border);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+    </style>
 </head>
 
 <body>
 
-    <h1>Hello, World!</h1>
+    <!-- Header Navigation -->
+    <nav id="main-nav">
+        <a href="index.html" class="nav-brand">INAAM's Website</a>
+        <div class="nav-links">
+            <a href="index.html" class="active">Home</a>
+            <a href="login.php" class="btn-login">Login</a>
+            <a href="register.php">Register</a>
+            <a href="profile.php">Profile</a>
+        </div>
+    </nav>
 
-    <p>Welcome to my first website.</p>
+    <div class="container">
 
-    <h2>About Me</h2>
-    <p> Hello, </p>
-    <p>My name is INAAM, and I am learning web development.</p>
-    <p>In my free time, I enjoy coding, reading, and exploring new technologies.</p>
-    <p>Feel free to reach out to me if you have any questions or want to collaborate!
-    <p>No one came to reach me.</p>
-    </p>
+        <!-- Welcome Banner -->
+        <header class="hero-section">
+            <h1>Hello, INAAM</h1>
+            <p>Welcome to my first website.</p>
+        </header>
+
+        <!-- About Me Section -->
+        <section class="card">
+            <h2>About Me</h2>
+            <div class="about-text">
+                <p>Hello,</p>
+                <p>My name is <strong>INAAM</strong>, and I am learning web development.</p>
+                <p>In my free time, I enjoy coding, reading, and exploring new technologies.</p>
+                <p>Feel free to reach out to me if you have any questions or want to collaborate!</p>
+            </div>
+        </section>
+
+        <!-- Education Section -->
+        <section class="card">
+            <h2>Education</h2>
+            <h3>My Academic Qualifications</h3>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Course</th>
+                            <th>College / Institute</th>
+                            <th>Passing Year</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>BCA</strong></td>
+                            <td>Universal Group of Management And Technology</td>
+                            <td><span class="year-badge">2028</span></td>
+                        </tr>
+                        <tr>
+                            <td>12th</td>
+                            <td>BHSS Sogam</td>
+                            <td><span class="year-badge">2024</span></td>
+                        </tr>
+                        <tr>
+                            <td>11th</td>
+                            <td>BHSS Sogam</td>
+                            <td><span class="year-badge">2023</span></td>
+                        </tr>
+                        <tr>
+                            <td>10th</td>
+                            <td>BHSS Sogam</td>
+                            <td><span class="year-badge">2022</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section class="card">
+            <h2>Contact Information</h2>
+            <p style="color: var(--text-muted); margin-bottom: 0.5rem;">Need help? Feel free to connect:</p>
+            <ul class="contact-list">
+                <li class="contact-item">
+                    <span class="contact-label">Phone:</span>
+                    <a href="tel:6006541527" class="contact-link">+91 6006541527</a>
+                </li>
+                <li class="contact-item">
+                    <span class="contact-label">Email:</span>
+                    <a href="mailto:domicle672@gmail.com" class="contact-link">domicle672@gmail.com</a>
+                </li>
+            </ul>
+        </section>
+
+        <footer>
+            <p>&copy; 2026 INAAM. Built with HTML & CSS.</p>
+        </footer>
+
+    </div>
 
 </body>
 
