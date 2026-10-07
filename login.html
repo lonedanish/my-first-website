@@ -1,56 +1,168 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - My Website</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: rgb(18, 18, 18);
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --success: #10b981;
+            --error: #ef4444;
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            padding: 1.5rem;
         }
 
         .login-box {
-            background-color: white;
-            width: 320px;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 15px gray;
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            width: 100%;
+            max-width: 400px;
+            padding: 2.5rem 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
 
         h1 {
             text-align: center;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #ffffff, var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: #ffffff;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1.8rem;
+        }
+
+        .alert-message {
+            display: none;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 1.2rem;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background-color: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--success);
+            color: #34d399;
+        }
+
+        .alert-error {
+            background-color: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--error);
+            color: #f87171;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #cbd5e1;
         }
 
         input {
             width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            box-sizing: border-box;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
-        button {
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+
+        .btn-submit {
             width: 100%;
-            padding: 10px;
-            background-color: darkblue;
+            padding: 0.85rem;
+            background: linear-gradient(135deg, var(--primary), #6366f1);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
             cursor: pointer;
+            margin-top: 0.5rem;
+            transition: transform 0.15s ease, opacity 0.2s ease;
         }
 
-        button:hover {
-            background-color: blue;
+        .btn-submit:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
         }
 
-        .forgot {
+        .bottom-links {
             text-align: center;
-            margin-top: 15px;
+            margin-top: 1.5rem;
+            padding-top: 1.2rem;
+            border-top: 1px solid var(--card-border);
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .bottom-links a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .bottom-links a:hover {
+            text-decoration: underline;
+        }
+
+        .back-home {
+            display: inline-block;
+            margin-top: 0.8rem;
+            font-size: 0.85rem;
         }
     </style>
 </head>
@@ -58,26 +170,81 @@
 <body>
 
     <div class="login-box">
+        <h1>Welcome Back</h1>
+        <p class="subtitle">Enter your credentials to login</p>
 
-        <h1>Login</h1>
+        <div id="alertBox" class="alert-message"></div>
 
-        <form>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="loginEmail">Email or Username</label>
+                <input type="text" id="loginEmail" name="email" placeholder="name@example.com" required>
+            </div>
 
-            <label>Username</label>
-            <input type="text" placeholder="Enter username">
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required>
+            </div>
 
-            <label>Password</label>
-            <input type="password" placeholder="Enter password">
-
-            <button type="submit">Login</button>
-
+            <button type="submit" id="btnLogin" class="btn-submit">Login</button>
         </form>
 
-        <div class="forgot">
-            <a href="#">Forgot Password?</a>
+        <div class="bottom-links">
+            <p>Don't have an account? <a href="register.html">Register here</a></p>
+            <a href="index.html" class="back-home">&larr; Back to Home</a>
         </div>
-
     </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const alertBox = document.getElementById('alertBox');
+        const btnLogin = document.getElementById('btnLogin');
+
+        function showAlert(msg, isSuccess) {
+            alertBox.textContent = msg;
+            alertBox.className = 'alert-message ' + (isSuccess ? 'alert-success' : 'alert-error');
+            alertBox.style.display = 'block';
+        }
+
+        loginForm.addEventListener('submit', function (e) {
+            e.preventDefault(); // Always handle client-side for GitHub Pages and local use!
+
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            const savedUserStr = localStorage.getItem('user_' + email) || localStorage.getItem('currentUser');
+            if (savedUserStr) {
+                try {
+                    const savedUser = JSON.parse(savedUserStr);
+                    if (savedUser.password && savedUser.password !== password) {
+                        showAlert('Incorrect password. Please try again.', false);
+                        return;
+                    }
+                    localStorage.setItem('currentUser', JSON.stringify(savedUser));
+                    showAlert('✅ Welcome back, ' + (savedUser.name || 'User') + '! Redirecting...', true);
+                    btnLogin.disabled = true;
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                    return;
+                } catch (err) {}
+            }
+
+            // Demo / first-time fallback
+            const demoUser = { 
+                name: email.split('@')[0] || 'INAAM', 
+                email: email, 
+                name_changed: 0,
+                avatar: ''
+            };
+            localStorage.setItem('currentUser', JSON.stringify(demoUser));
+            showAlert('✅ Logged in successfully! Redirecting...', true);
+            btnLogin.disabled = true;
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 1000);
+        });
+    </script>
 
 </body>
 </html>

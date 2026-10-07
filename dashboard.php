@@ -1,0 +1,572 @@
+<?php
+
+session_start();
+
+if (!isset($_SESSION["user_id"])) {
+    header("Location: login.php");
+    exit();
+}
+
+$user_name = htmlspecialchars($_SESSION["user_name"]);
+$user_email = htmlspecialchars($_SESSION["user_email"]);
+$user_id = htmlspecialchars($_SESSION["user_id"]);
+
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - <?php echo $user_name; ?></title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Top Navbar */
+        .navbar {
+            background-color: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--card-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            text-decoration: none;
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 0.5rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--card-border);
+            padding: 0.4rem 0.8rem;
+            border-radius: 30px;
+        }
+
+        .avatar-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: white;
+        }
+
+        .btn-logout {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #f87171 !important;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-logout:hover {
+            background-color: #ef4444 !important;
+            color: white !important;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem 3rem;
+        }
+
+        /* Welcome Banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.25), rgba(56, 189, 248, 0.1));
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 2rem 2.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        .welcome-text h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #ffffff, var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+        }
+
+        .welcome-text p {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--success);
+            color: #34d399;
+            padding: 0.4rem 1rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        /* Stat Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 1.5rem;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .stat-icon {
+            font-size: 1.3rem;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-subtext {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #0f172a;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 0.8rem;
+        }
+
+        .progress-bar {
+            width: 75%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 10px;
+        }
+
+        /* Content Grid (2 columns) */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 850px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 1.8rem;
+        }
+
+        .panel h2 {
+            font-size: 1.3rem;
+            margin-bottom: 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 0.6rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Profile Details List */
+        .info-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .info-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .info-value {
+            color: #ffffff;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        /* Activity Timeline */
+        .activity-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.8rem;
+        }
+
+        .activity-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .activity-details h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .activity-details p {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+
+        /* Quick Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #6366f1);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--card-border);
+            color: var(--accent);
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <a href="dashboard.php" class="brand">
+            <span>INAAM Dashboard</span>
+            <span class="brand-badge">PRO</span>
+        </a>
+
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="dashboard.php" class="active">Dashboard</a>
+            <a href="profile.php">Profile</a>
+            <a href="activity.php">Activity</a>
+            <a href="settings.php">Settings</a>
+            <div class="user-pill">
+                <div class="avatar-circle">
+                    <?php if (!empty($_SESSION["profile_image"]) && file_exists(__DIR__ . "/" . $_SESSION["profile_image"])): ?>
+                        <img src="<?php echo htmlspecialchars($_SESSION["profile_image"]); ?>" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+                    <?php else: ?>
+                        <?php echo strtoupper(substr($user_name, 0, 1)); ?>
+                    <?php endif; ?>
+                </div>
+                <span style="font-size: 0.9rem; font-weight: 500;"><?php echo $user_name; ?></span>
+            </div>
+            <a href="logout.php" class="btn-logout">Logout</a>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- Welcome Banner -->
+        <section class="welcome-banner">
+            <div class="welcome-text">
+                <h1>Welcome, <?php echo $user_name; ?> 👋</h1>
+                <p>Glad to have you back! Here is an overview of your account and projects.</p>
+            </div>
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span>Active Member</span>
+            </div>
+        </section>
+
+        <!-- Stats Grid -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Course Enrolled</span>
+                    <span class="stat-icon">🎓</span>
+                </div>
+                <div class="stat-value">BCA</div>
+                <p class="stat-subtext">UGMT &bull; Class of 2028</p>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Profile Progress</span>
+                    <span class="stat-icon">📈</span>
+                </div>
+                <div class="stat-value">75%</div>
+                <p class="stat-subtext">Portfolio &amp; Profile details</p>
+                <div class="progress-bar-container">
+                    <div class="progress-bar"></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Current Role</span>
+                    <span class="stat-icon">💻</span>
+                </div>
+                <div class="stat-value">Developer</div>
+                <p class="stat-subtext">Web Development Learner</p>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Security &amp; Auth</span>
+                    <span class="stat-icon">🔒</span>
+                </div>
+                <div class="stat-value">Verified</div>
+                <p class="stat-subtext">Password protected session</p>
+            </div>
+        </section>
+
+        <!-- Content Grid -->
+        <div class="content-grid">
+
+            <!-- Profile Summary Panel -->
+            <section class="panel">
+                <h2>👤 Profile Details</h2>
+                <ul class="info-list">
+                    <li class="info-item">
+                        <span class="info-label">Full Name</span>
+                        <span class="info-value"><?php echo $user_name; ?></span>
+                    </li>
+                    <li class="info-item">
+                        <span class="info-label">Email Address</span>
+                        <span class="info-value"><?php echo $user_email; ?></span>
+                    </li>
+                    <li class="info-item">
+                        <span class="info-label">User ID</span>
+                        <span class="info-value">#<?php echo $user_id; ?></span>
+                    </li>
+                    <li class="info-item">
+                        <span class="info-label">College</span>
+                        <span class="info-value">Universal Group of Mgmt. &amp; Tech.</span>
+                    </li>
+                    <li class="info-item">
+                        <span class="info-label">School</span>
+                        <span class="info-value">BHSS Sogam</span>
+                    </li>
+                </ul>
+
+                <div class="action-buttons">
+                    <a href="profile.php" class="btn btn-primary">View Full Profile</a>
+                    <a href="settings.php" class="btn btn-outline">Account Settings</a>
+                </div>
+            </section>
+
+            <!-- Recent Activity Panel -->
+            <section class="panel">
+                <h2>⚡ Recent Activity</h2>
+                <ul class="activity-list">
+                    <li class="activity-item">
+                        <div class="activity-icon">✓</div>
+                        <div class="activity-details">
+                            <h4>Created Account &amp; Logged In</h4>
+                            <p>Successfully authenticated into system</p>
+                        </div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="activity-icon">🌐</div>
+                        <div class="activity-details">
+                            <h4>Portfolio Homepage Built</h4>
+                            <p>Modern hero section, education table &amp; contact card</p>
+                        </div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="activity-icon">⚙️</div>
+                        <div class="activity-details">
+                            <h4>Database Configured</h4>
+                            <p>MySQL user database connected via PHP</p>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="action-buttons">
+                    <a href="index.html" class="btn btn-outline">Visit Homepage</a>
+                    <a href="logout.php" class="btn btn-outline" style="border-color: #ef4444; color: #f87171;">Logout</a>
+                </div>
+            </section>
+
+        </div>
+
+    </main>
+
+</body>
+
+</html>

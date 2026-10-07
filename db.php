@@ -2,13 +2,19 @@
 
 $host = "localhost";
 $username = "root";
-$password = "";
+$password = ""; // If your MySQL has a password, enter it here
 $database = "my_website";
 
-$conn = new mysqli($host, $username, $password, $database);
+mysqli_report(MYSQLI_REPORT_OFF);
 
-if ($conn->connect_error) {
-    die("Database connection failed: " . $conn->connect_error);
+try {
+    $conn = @new mysqli($host, $username, $password, $database);
+    if ($conn->connect_error) {
+        $db_error = $conn->connect_error;
+    }
+} catch (Exception $e) {
+    $conn = null;
+    $db_error = $e->getMessage();
 }
 
 ?>

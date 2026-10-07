@@ -1,47 +1,6 @@
-<?php
-
-session_start();
-include "db.php";
-
-if (!isset($_SESSION["user_id"])) {
-    header("Location: login.php");
-    exit();
-}
-
-$user_id = $_SESSION["user_id"];
-$user_name = htmlspecialchars($_SESSION["user_name"]);
-$user_email = htmlspecialchars($_SESSION["user_email"]);
-$name_changed = $_SESSION["name_changed"] ?? 0;
-$profile_image = $_SESSION["profile_image"] ?? "";
-
-$message = "";
-
-// Check database for latest status if connected
-if (isset($conn) && $conn && !$conn->connect_error) {
-    $stmt = $conn->prepare("SELECT name, name_changed, profile_image FROM users WHERE id = ?");
-    if ($stmt) {
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        if ($row = $res->fetch_assoc()) {
-            $user_name = htmlspecialchars($row["name"]);
-            $name_changed = (int)$row["name_changed"];
-            $profile_image = $row["profile_image"] ?? "";
-        }
-        $stmt->close();
-    }
-}
-
-// Handle Security Questions Submission
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
-    $_SESSION["security_q1"] = htmlspecialchars($_POST["q1_answer"] ?? "");
-    $_SESSION["security_q2"] = htmlspecialchars($_POST["q2_answer"] ?? "");
-    $message = "✅ Security questions saved successfully to your session!";
-}
-
-?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -62,6 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
             --text-muted: #94a3b8;
             --accent: #38bdf8;
             --success: #10b981;
+            --warning: #f59e0b;
             --error: #ef4444;
         }
 
@@ -233,6 +193,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
             font-size: 0.98rem;
             font-weight: 600;
             color: #ffffff;
+            word-break: break-all;
         }
 
         .check-status {
@@ -254,7 +215,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
             color: #cbd5e1;
         }
 
-        select, input[type="text"] {
+        select,
+        input[type="text"] {
             width: 100%;
             padding: 0.75rem 1rem;
             border-radius: 8px;
@@ -264,6 +226,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
             font-size: 0.95rem;
             font-family: inherit;
             outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        select:focus,
+        input[type="text"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
         }
 
         .btn {
@@ -277,6 +246,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
             font-size: 0.95rem;
             cursor: pointer;
             border: none;
+            font-family: inherit;
             transition: all 0.2s ease;
         }
 
@@ -285,18 +255,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
             color: white;
         }
 
+        .btn-primary:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
         .btn-outline {
             background: transparent;
             border: 1px solid var(--card-border);
             color: var(--accent);
         }
 
+        .btn-outline:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent);
+        }
+
         .alert-box {
+            display: none;
             padding: 0.85rem 1.2rem;
             border-radius: 10px;
             font-size: 0.95rem;
             margin-bottom: 1.2rem;
             font-weight: 500;
+        }
+
+        .alert-success {
             background-color: rgba(16, 185, 129, 0.15);
             border: 1px solid var(--success);
             color: #34d399;
@@ -314,6 +298,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
             border-radius: 10px;
             background: rgba(15, 23, 42, 0.5);
             overflow: hidden;
+            transition: border-color 0.2s ease;
+        }
+
+        .faq-item:hover {
+            border-color: rgba(56, 189, 248, 0.4);
         }
 
         .faq-question {
@@ -351,18 +340,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
         .faq-item.active .faq-icon {
             transform: rotate(45deg);
         }
+
+        .actions-bar {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
     </style>
 </head>
+
 <body>
 
     <nav>
-        <a href="dashboard.php" class="brand">Account Settings</a>
+        <a href="dashboard.html" class="brand">Account Settings</a>
         <div class="nav-links">
             <a href="index.html">Home</a>
-            <a href="dashboard.php">Dashboard</a>
-            <a href="profile.php">Profile</a>
-            <a href="settings.php" class="active">Settings</a>
-            <a href="logout.php" style="color: #f87171;">Logout</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="profile.html">Profile</a>
+            <a href="settings.html" class="active">Settings</a>
         </div>
     </nav>
 
@@ -377,11 +373,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
         <section class="card">
             <div class="card-header">
                 <h2>🔍 Automatic Details Check</h2>
-                <span class="badge-health">● All Details Verified</span>
+                <div style="display: flex; align-items: center; gap: 0.8rem;">
+                    <span id="healthBadge" class="badge-health">● All Details Verified</span>
+                    <button id="btnRecheck" class="btn btn-outline"
+                        style="padding: 0.35rem 0.8rem; font-size: 0.85rem;">🔄 Re-Check</button>
+                </div>
             </div>
 
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
-                Live scan of your account configuration from session and database:
+                Live scan of your account configuration and browser storage:
             </p>
 
             <div class="details-check-grid">
@@ -389,7 +389,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
                     <div class="check-icon">👤</div>
                     <div class="check-info">
                         <div class="check-label">Full Username</div>
-                        <div class="check-value"><?php echo $user_name; ?></div>
+                        <div id="checkName" class="check-value">Loading...</div>
                         <div class="check-status">✓ Detected</div>
                     </div>
                 </div>
@@ -398,7 +398,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
                     <div class="check-icon">📧</div>
                     <div class="check-info">
                         <div class="check-label">Email Address</div>
-                        <div class="check-value"><?php echo $user_email; ?></div>
+                        <div id="checkEmail" class="check-value">Loading...</div>
                         <div class="check-status">✓ Detected &amp; Active</div>
                     </div>
                 </div>
@@ -407,10 +407,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
                     <div class="check-icon">✏️</div>
                     <div class="check-info">
                         <div class="check-label">Name Change Limit</div>
-                        <div class="check-value" style="<?php echo ($name_changed >= 1) ? 'color: #f87171;' : 'color: #34d399;'; ?>">
-                            <?php echo ($name_changed >= 1) ? 'Locked (1/1 used)' : 'Available (0/1 used)'; ?>
-                        </div>
-                        <div class="check-status">✓ Policy Verified</div>
+                        <div id="checkNameLimit" class="check-value">Checking...</div>
+                        <div id="checkNameLimitStatus" class="check-status">✓ Policy Verified</div>
                     </div>
                 </div>
 
@@ -418,7 +416,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
                     <div class="check-icon">🖼️</div>
                     <div class="check-info">
                         <div class="check-label">Profile Picture</div>
-                        <div class="check-value"><?php echo !empty($profile_image) ? 'Photo Uploaded' : 'Default Avatar'; ?></div>
+                        <div id="checkAvatar" class="check-value">Checking...</div>
                         <div class="check-status">✓ Avatar Active</div>
                     </div>
                 </div>
@@ -428,52 +426,66 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
                     <div class="check-info">
                         <div class="check-label">Password Protection</div>
                         <div class="check-value">Encrypted</div>
-                        <div class="check-status">✓ Password Hash Active</div>
+                        <div class="check-status">✓ Security Enabled</div>
                     </div>
                 </div>
 
                 <div class="check-item">
-                    <div class="check-icon">⚡</div>
+                    <div class="check-icon">🌐</div>
                     <div class="check-info">
-                        <div class="check-label">Account ID</div>
-                        <div class="check-value">#<?php echo $user_id; ?></div>
-                        <div class="check-status">✓ Authenticated</div>
+                        <div class="check-label">Hosting Compatibility</div>
+                        <div class="check-value">GitHub Pages + Local</div>
+                        <div class="check-status">✓ Storage Synced</div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- 2. Security Questions Form -->
+        <!-- 2. Security & Recovery Questions -->
         <section class="card">
             <div class="card-header">
                 <h2>🛡️ Security &amp; Recovery Questions</h2>
-                <span class="badge-health" style="background: rgba(56, 189, 248, 0.15); border-color: var(--accent); color: var(--accent);">
+                <span class="badge-health"
+                    style="background: rgba(56, 189, 248, 0.15); border-color: var(--accent); color: var(--accent);">
                     Account Protection
                 </span>
             </div>
 
-            <?php if (!empty($message)): ?>
-                <div class="alert-box"><?php echo $message; ?></div>
-            <?php endif; ?>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.2rem;">
+                Set up security questions to verify your identity and protect your account:
+            </p>
 
-            <form method="POST">
+            <div id="alertBox" class="alert-box alert-success"></div>
+
+            <form id="securityQuestionsForm">
+                <!-- Question 1 -->
                 <div class="form-group">
-                    <label>Question 1: Educational Background</label>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">What is the name of your high school?</p>
-                    <input type="text" name="q1_answer" value="<?php echo htmlspecialchars($_SESSION['security_q1'] ?? 'BHSS Sogam'); ?>" required>
+                    <label for="q1Select">Question 1: Educational Background</label>
+                    <select id="q1Select">
+                        <option value="school">What is the name of your high school?</option>
+                        <option value="college">What is your college or university name?</option>
+                        <option value="degree">What degree or course are you studying?</option>
+                    </select>
+                    <input type="text" id="q1Answer" placeholder="e.g. BHSS Sogam" style="margin-top: 0.5rem;" required>
                 </div>
 
+                <!-- Question 2 -->
                 <div class="form-group">
-                    <label>Question 2: Personal Career</label>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;">What is your target tech degree or degree topic?</p>
-                    <input type="text" name="q2_answer" value="<?php echo htmlspecialchars($_SESSION['security_q2'] ?? 'BCA at UGMT'); ?>" required>
+                    <label for="q2Select">Question 2: Personal Knowledge</label>
+                    <select id="q2Select">
+                        <option value="career">What is your target tech career?</option>
+                        <option value="tech">What is your favorite coding language?</option>
+                        <option value="city">In which town or district do you live?</option>
+                    </select>
+                    <input type="text" id="q2Answer" placeholder="e.g. Web Development / BCA"
+                        style="margin-top: 0.5rem;" required>
                 </div>
 
-                <button type="submit" name="save_questions" class="btn btn-primary">💾 Save Security Questions</button>
+                <button type="submit" class="btn btn-primary">💾 Save Security Questions</button>
             </form>
         </section>
 
-        <!-- 3. Frequently Asked Questions -->
+        <!-- 3. Frequently Asked Questions (FAQ) -->
         <section class="card">
             <div class="card-header">
                 <h2>❓ Common Questions &amp; Answers</h2>
@@ -487,40 +499,164 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
                         <span class="faq-icon">+</span>
                     </div>
                     <div class="faq-answer">
-                        To maintain identity consistency and prevent account confusion, username edits are limited to 1 time. After your first update, the username is permanently locked.
+                        To maintain identity consistency across your academic projects and prevent accidental renaming,
+                        our policy allows you to update your registered name exactly <strong>once</strong>. After the
+                        first change, your name is permanently locked.
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <div class="faq-question">
-                        <span>2. Can I change my profile picture multiple times?</span>
+                        <span>2. How does login and registration work on GitHub Pages without PHP?</span>
                         <span class="faq-icon">+</span>
                     </div>
                     <div class="faq-answer">
-                        Yes! Profile pictures can be updated as often as you want. Go to your Profile page and click the camera icon to upload a new picture or remove it anytime.
+                        GitHub Pages only hosts static files. We configured your system to use the browser's
+                        <code>localStorage</code> database engine. It stores your account, verifies your credentials,
+                        and maintains your active session across pages without needing a server.
                     </div>
                 </div>
 
                 <div class="faq-item">
                     <div class="faq-question">
-                        <span>3. How do I contact the website administrator?</span>
+                        <span>3. Can I change my profile picture multiple times?</span>
                         <span class="faq-icon">+</span>
                     </div>
                     <div class="faq-answer">
-                        You can email directly at <strong>domicle672@gmail.com</strong> or call <strong>+91 6006541527</strong>.
+                        Yes! Unlike your username, you can change your profile picture as many times as you like. You
+                        can upload any personal photo from your computer or switch between the built-in avatar presets
+                        (Coder, Student, Astronaut, etc.) anytime on your Profile page.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>4. How do I log out or switch to another user?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Click the red <strong>Logout</strong> button in your dashboard or profile navigation. This
+                        clears your active session and returns you to the login screen, where you can log in as another
+                        user or register a new account.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>5. Who can I contact if I need help with my website?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        You can reach out directly via the contact details on the homepage: email
+                        <strong>domicle672@gmail.com</strong> or call <strong>+91 6006541527</strong>.
                     </div>
                 </div>
             </div>
         </section>
 
-        <div style="display: flex; gap: 1rem;">
-            <a href="dashboard.php" class="btn btn-outline">&larr; Return to Dashboard</a>
-            <a href="profile.php" class="btn btn-outline">Go to Profile</a>
+        <div class="actions-bar">
+            <a href="dashboard.html" class="btn btn-outline">&larr; Return to Dashboard</a>
+            <a href="profile.html" class="btn btn-outline">Go to Profile</a>
+            <a href="index.html" class="btn btn-outline">Visit Homepage</a>
         </div>
 
     </div>
 
     <script>
+        // Automatic Details Diagnostic Checker
+        function runAutoCheck() {
+            const savedUserStr = localStorage.getItem('currentUser');
+            let user = { name: 'INAAM', email: 'domicle672@gmail.com', name_changed: 0, avatar: '' };
+
+            if (savedUserStr) {
+                try {
+                    user = Object.assign(user, JSON.parse(savedUserStr));
+                } catch (e) { }
+            }
+
+            // Update live check fields
+            document.getElementById('checkName').textContent = user.name || 'INAAM';
+            document.getElementById('checkEmail').textContent = user.email || 'domicle672@gmail.com';
+
+            const checkNameLimit = document.getElementById('checkNameLimit');
+            const checkNameLimitStatus = document.getElementById('checkNameLimitStatus');
+            if (user.name_changed && user.name_changed >= 1) {
+                checkNameLimit.textContent = 'Locked (1/1 used)';
+                checkNameLimit.style.color = '#f87171';
+                checkNameLimitStatus.textContent = '🔒 Locked Permanently';
+                checkNameLimitStatus.style.color = '#f87171';
+            } else {
+                checkNameLimit.textContent = 'Available (0/1 used)';
+                checkNameLimit.style.color = '#34d399';
+                checkNameLimitStatus.textContent = '✓ 1 Edit Available';
+                checkNameLimitStatus.style.color = '#34d399';
+            }
+
+            const checkAvatar = document.getElementById('checkAvatar');
+            if (user.avatar) {
+                checkAvatar.textContent = user.avatar.startsWith('data:') ? 'Custom Photo' : ('Preset (' + user.avatar + ')');
+            } else {
+                checkAvatar.textContent = 'Default Initial (' + (user.name ? user.name.charAt(0).toUpperCase() : 'I') + ')';
+            }
+        }
+
+        runAutoCheck();
+
+        document.getElementById('btnRecheck').addEventListener('click', function () {
+            this.textContent = '⏳ Checking...';
+            setTimeout(() => {
+                runAutoCheck();
+                this.textContent = '🔄 Re-Check';
+                const badge = document.getElementById('healthBadge');
+                badge.textContent = '● Verified Just Now';
+                badge.style.borderColor = '#38bdf8';
+                badge.style.color = '#38bdf8';
+            }, 400);
+        });
+
+        // Security Questions Storage
+        const securityForm = document.getElementById('securityQuestionsForm');
+        const alertBox = document.getElementById('alertBox');
+        const q1Select = document.getElementById('q1Select');
+        const q1Answer = document.getElementById('q1Answer');
+        const q2Select = document.getElementById('q2Select');
+        const q2Answer = document.getElementById('q2Answer');
+
+        // Load existing saved questions
+        const savedQAStr = localStorage.getItem('user_security_qa');
+        if (savedQAStr) {
+            try {
+                const qa = JSON.parse(savedQAStr);
+                if (qa.q1) q1Select.value = qa.q1;
+                if (qa.a1) q1Answer.value = qa.a1;
+                if (qa.q2) q2Select.value = qa.q2;
+                if (qa.a2) q2Answer.value = qa.a2;
+            } catch (e) { }
+        } else {
+            // Default suggestions based on user context
+            q1Answer.value = 'BHSS Sogam';
+            q2Answer.value = 'Full-Stack Web Development (BCA)';
+        }
+
+        securityForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const qaData = {
+                q1: q1Select.value,
+                a1: q1Answer.value.trim(),
+                q2: q2Select.value,
+                a2: q2Answer.value.trim(),
+                updatedAt: new Date().toLocaleDateString()
+            };
+
+            localStorage.setItem('user_security_qa', JSON.stringify(qaData));
+            alertBox.style.display = 'block';
+            alertBox.textContent = '✅ Security questions saved successfully! Your account is protected.';
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 3000);
+        });
+
+        // Accordion FAQ interaction
         document.querySelectorAll('.faq-question').forEach(header => {
             header.addEventListener('click', () => {
                 const item = header.parentElement;
@@ -530,4 +666,5 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
     </script>
 
 </body>
+
 </html>

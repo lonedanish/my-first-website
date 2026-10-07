@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Activation</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            max-width: 440px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .icon-wrap {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .icon-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 2px solid var(--success);
+        }
+
+        .icon-error {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 2px solid var(--error);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.8rem;
+            color: #ffffff;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 0.85rem;
+            background: linear-gradient(135deg, var(--primary), #6366f1);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: opacity 0.2s ease;
+        }
+
+        .btn:hover {
+            opacity: 0.95;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div id="iconBox" class="icon-wrap icon-success">✓</div>
+        <h1 id="headingText">Account Activated!</h1>
+        <p id="msgText">Verifying your activation link...</p>
+        <a href="login.html" class="btn">Proceed to Login</a>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const email = params.get('email');
+        const token = params.get('token');
+
+        const headingText = document.getElementById('headingText');
+        const msgText = document.getElementById('msgText');
+        const iconBox = document.getElementById('iconBox');
+
+        if (!email || !token) {
+            headingText.textContent = 'Activation Link Expired';
+            msgText.textContent = 'No valid email or token found in this link.';
+            iconBox.className = 'icon-wrap icon-error';
+            iconBox.textContent = '✕';
+        } else {
+            // Mark user activated in localStorage
+            const savedUserStr = localStorage.getItem('user_' + email);
+            if (savedUserStr) {
+                try {
+                    const u = JSON.parse(savedUserStr);
+                    u.status = 'active';
+                    localStorage.setItem('user_' + email, JSON.stringify(u));
+                    localStorage.setItem('currentUser', JSON.stringify(u));
+                } catch (e) {}
+            }
+
+            headingText.textContent = 'Account Activated!';
+            msgText.innerHTML = 'Your account for <strong>' + email + '</strong> has been activated successfully! You can now log in.';
+            iconBox.className = 'icon-wrap icon-success';
+            iconBox.textContent = '✓';
+        }
+    </script>
+
+</body>
+</html>

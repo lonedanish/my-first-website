@@ -4,68 +4,212 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - My Website</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        body {
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: rgb(18, 18, 18);
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            padding: 1.5rem;
         }
 
         .register-box {
-            background-color: white;
-            width: 340px;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 15px gray;
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            width: 100%;
+            max-width: 440px;
+            padding: 2.5rem 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
 
         h1 {
             text-align: center;
-            margin-top: 0;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #ffffff, var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: #ffffff;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1.8rem;
+        }
+
+        .alert-message {
+            display: none;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 1.2rem;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background-color: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--success);
+            color: #34d399;
+        }
+
+        .alert-error {
+            background-color: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--error);
+            color: #f87171;
+        }
+
+        .activation-box {
+            display: none;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 1.4rem;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .activation-box h3 {
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .activation-box p {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            margin-bottom: 1rem;
+        }
+
+        .activation-btn {
+            display: block;
+            width: 100%;
+            padding: 0.8rem;
+            background: var(--accent);
+            color: #0f172a;
+            font-weight: 700;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            transition: opacity 0.2s ease;
+        }
+
+        .activation-btn:hover {
+            opacity: 0.9;
+        }
+
+        .link-input {
+            width: 100%;
+            padding: 0.6rem;
+            background: #0f172a;
+            border: 1px solid var(--card-border);
+            color: #94a3b8;
+            font-size: 0.82rem;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #cbd5e1;
         }
 
         input {
             width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
         }
 
-        button {
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+
+        .btn-submit {
             width: 100%;
-            padding: 10px;
-            background-color: darkblue;
+            padding: 0.85rem;
+            background: linear-gradient(135deg, var(--primary), #6366f1);
             color: white;
             border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
+            border-radius: 8px;
             font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 0.5rem;
         }
 
-        button:hover {
-            background-color: blue;
+        .btn-submit:hover {
+            opacity: 0.95;
         }
 
-        .links {
+        .bottom-links {
             text-align: center;
-            margin-top: 15px;
+            margin-top: 1.5rem;
+            padding-top: 1.2rem;
+            border-top: 1px solid var(--card-border);
+            font-size: 0.9rem;
+            color: var(--text-muted);
         }
 
-        .links a {
-            color: darkblue;
+        .bottom-links a {
+            color: var(--accent);
             text-decoration: none;
+            font-weight: 500;
         }
 
-        .links a:hover {
+        .bottom-links a:hover {
             text-decoration: underline;
+        }
+
+        .back-home {
+            display: inline-block;
+            margin-top: 0.8rem;
+            font-size: 0.85rem;
         }
     </style>
 </head>
@@ -74,24 +218,95 @@
 
     <div class="register-box">
         <h1>Create Account</h1>
+        <p class="subtitle">Join today and build your profile</p>
 
-        <form action="register.php" method="POST">
-            <label>Name</label>
-            <input type="text" name="name" placeholder="Enter your full name" required>
+        <div id="alertBox" class="alert-message"></div>
 
-            <label>Email</label>
-            <input type="email" name="email" placeholder="Enter your email" required>
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="regName">Full Name</label>
+                <input type="text" id="regName" name="name" placeholder="e.g. INAAM" required>
+            </div>
 
-            <label>Password</label>
-            <input type="password" name="password" placeholder="Create a password" required>
+            <div class="form-group">
+                <label for="regEmail">Email Address</label>
+                <input type="email" id="regEmail" name="email" placeholder="name@example.com" required>
+            </div>
 
-            <button type="submit">Register</button>
+            <div class="form-group">
+                <label for="regPassword">Password</label>
+                <input type="password" id="regPassword" name="password" placeholder="Create a strong password" required minlength="4">
+            </div>
+
+            <button type="submit" id="btnRegister" class="btn-submit">Register</button>
         </form>
 
-        <div class="links">
-            <a href="login.php">Already have an account? Login</a>
+        <div id="activationBox" class="activation-box">
+            <h3>🔗 Account Activation Link</h3>
+            <p>Click below to activate your account and log in:</p>
+            <a id="activationLinkBtn" href="#" class="activation-btn">Activate Account Now &rarr;</a>
+            <input id="activationLinkInput" type="text" readonly class="link-input" onclick="this.select();">
+        </div>
+
+        <div class="bottom-links">
+            <p>Already have an account? <a href="login.html">Login here</a></p>
+            <a href="index.html" class="back-home">&larr; Back to Home</a>
         </div>
     </div>
+
+    <script>
+        const registerForm = document.getElementById('registerForm');
+        const alertBox = document.getElementById('alertBox');
+        const btnRegister = document.getElementById('btnRegister');
+        const activationBox = document.getElementById('activationBox');
+        const activationLinkBtn = document.getElementById('activationLinkBtn');
+        const activationLinkInput = document.getElementById('activationLinkInput');
+
+        function showAlert(msg, isSuccess) {
+            alertBox.textContent = msg;
+            alertBox.className = 'alert-message ' + (isSuccess ? 'alert-success' : 'alert-error');
+            alertBox.style.display = 'block';
+        }
+
+        registerForm.addEventListener('submit', function (e) {
+            e.preventDefault(); // Always handle client-side for GitHub Pages and local use!
+
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+
+            if (!name || !email || !password) {
+                showAlert('Please fill in all fields.', false);
+                return;
+            }
+
+            const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+            const user = { 
+                name: name, 
+                email: email, 
+                password: password, 
+                status: 'active', 
+                token: token,
+                name_changed: 0,
+                avatar: ''
+            };
+
+            // Save user in localStorage
+            localStorage.setItem('user_' + email, JSON.stringify(user));
+            localStorage.setItem('currentUser', JSON.stringify(user));
+
+            const currentUrl = window.location.href;
+            const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
+            const activationUrl = baseUrl + 'activate.html?email=' + encodeURIComponent(email) + '&token=' + token;
+
+            showAlert('✅ Account registered successfully! Click your activation link below to continue.', true);
+            registerForm.style.display = 'none';
+
+            activationLinkBtn.href = activationUrl;
+            activationLinkInput.value = activationUrl;
+            activationBox.style.display = 'block';
+        });
+    </script>
 
 </body>
 </html>

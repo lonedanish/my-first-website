@@ -1,166 +1,10 @@
-<?php
-
-session_start();
-include "db.php";
-
-if (!isset($_SESSION["user_id"])) {
-    header("Location: login.php");
-    exit();
-}
-
-$user_id = $_SESSION["user_id"];
-$user_email = htmlspecialchars($_SESSION["user_email"]);
-$message = "";
-$message_type = "";
-
-// Ensure database columns exist
-if (isset($conn) && $conn && !$conn->connect_error) {
-    @$conn->query("ALTER TABLE users ADD COLUMN name_changed INT DEFAULT 0");
-    @$conn->query("ALTER TABLE users ADD COLUMN profile_image VARCHAR(255) DEFAULT ''");
-}
-
-$name_changed = $_SESSION["name_changed"] ?? 0;
-$profile_image = $_SESSION["profile_image"] ?? "";
-
-// Fetch current user data from database if connected
-if (isset($conn) && $conn && !$conn->connect_error) {
-    $stmt = $conn->prepare("SELECT name, name_changed, profile_image FROM users WHERE id = ?");
-    if ($stmt) {
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        if ($row = $res->fetch_assoc()) {
-            $_SESSION["user_name"] = $row["name"];
-            $name_changed = (int)$row["name_changed"];
-            $_SESSION["name_changed"] = $name_changed;
-
-            if (!empty($row["profile_image"])) {
-                $profile_image = $row["profile_image"];
-                $_SESSION["profile_image"] = $profile_image;
-            }
-        }
-        $stmt->close();
-    }
-}
-
-// Handle Profile Picture Upload
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["upload_picture"])) {
-    if (isset($_FILES["profile_pic"]) && $_FILES["profile_pic"]["error"] === UPLOAD_ERR_OK) {
-        $file_tmp = $_FILES["profile_pic"]["tmp_name"];
-        $file_name = $_FILES["profile_pic"]["name"];
-        $file_size = $_FILES["profile_pic"]["size"];
-        $ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-
-        $allowed_exts = ["jpg", "jpeg", "png", "webp", "gif"];
-
-        if (!in_array($ext, $allowed_exts)) {
-            $message = "Invalid image type. Please upload a JPG, PNG, WEBP, or GIF.";
-            $message_type = "error";
-        } elseif ($file_size > 5 * 1024 * 1024) {
-            $message = "Image size too large. Maximum allowed size is 5MB.";
-            $message_type = "error";
-        } else {
-            $upload_dir = __DIR__ . "/uploads/";
-            if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0777, true);
-            }
-
-            $new_filename = "avatar_" . $user_id . "_" . time() . "." . $ext;
-            $dest_path = $upload_dir . $new_filename;
-
-            if (move_uploaded_file($file_tmp, $dest_path)) {
-                $profile_image = "uploads/" . $new_filename;
-                $_SESSION["profile_image"] = $profile_image;
-
-                if (isset($conn) && $conn && !$conn->connect_error) {
-                    $up = $conn->prepare("UPDATE users SET profile_image = ? WHERE id = ?");
-                    if ($up) {
-                        $up->bind_param("si", $profile_image, $user_id);
-                        $up->execute();
-                        $up->close();
-                    }
-                }
-                $message = "✅ Profile picture uploaded and updated successfully!";
-                $message_type = "success";
-            } else {
-                $message = "Failed to save uploaded picture. Please check folder permissions.";
-                $message_type = "error";
-            }
-        }
-    } else {
-        $message = "Please select an image file to upload.";
-        $message_type = "error";
-    }
-}
-
-// Handle Remove Profile Picture
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["remove_picture"])) {
-    $profile_image = "";
-    $_SESSION["profile_image"] = "";
-
-    if (isset($conn) && $conn && !$conn->connect_error) {
-        $up = $conn->prepare("UPDATE users SET profile_image = '' WHERE id = ?");
-        if ($up) {
-            $up->bind_param("i", $user_id);
-            $up->execute();
-            $up->close();
-        }
-    }
-    $message = "Profile picture removed.";
-    $message_type = "success";
-}
-
-// Handle Name Change Request (1-Time limit)
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_name"])) {
-    $new_name = trim($_POST["new_name"] ?? "");
-
-    if ($name_changed >= 1) {
-        $message = "🔒 You have already changed your username once! No further changes are allowed.";
-        $message_type = "error";
-    } elseif (empty($new_name)) {
-        $message = "Please enter a valid username.";
-        $message_type = "error";
-    } elseif ($new_name === $_SESSION["user_name"]) {
-        $message = "The new username must be different from your current username.";
-        $message_type = "error";
-    } else {
-        if (isset($conn) && $conn && !$conn->connect_error) {
-            $up_stmt = $conn->prepare("UPDATE users SET name = ?, name_changed = 1 WHERE id = ? AND name_changed = 0");
-            if ($up_stmt) {
-                $up_stmt->bind_param("si", $new_name, $user_id);
-                $up_stmt->execute();
-                if ($up_stmt->affected_rows > 0) {
-                    $_SESSION["user_name"] = $new_name;
-                    $_SESSION["name_changed"] = 1;
-                    $name_changed = 1;
-                    $message = "✅ Username successfully changed to '$new_name'! (1/1 limit used — this cannot be changed again).";
-                    $message_type = "success";
-                } else {
-                    $message = "🔒 You have already used your 1 allowed username change.";
-                    $message_type = "error";
-                }
-                $up_stmt->close();
-            }
-        } else {
-            $_SESSION["user_name"] = $new_name;
-            $_SESSION["name_changed"] = 1;
-            $name_changed = 1;
-            $message = "✅ Username successfully changed to '$new_name'! (1/1 limit reached).";
-            $message_type = "success";
-        }
-    }
-}
-
-$user_name = htmlspecialchars($_SESSION["user_name"]);
-
-?>
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile - <?php echo $user_name; ?></title>
+    <title>My Profile</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -179,7 +23,6 @@ $user_name = htmlspecialchars($_SESSION["user_name"]);
             --accent: #38bdf8;
             --success: #10b981;
             --error: #ef4444;
-            --warning: #f59e0b;
         }
 
         * {
@@ -347,6 +190,7 @@ $user_name = htmlspecialchars($_SESSION["user_name"]);
         }
 
         .alert-box {
+            display: none;
             padding: 0.85rem 1.2rem;
             border-radius: 10px;
             font-size: 0.95rem;
@@ -417,7 +261,6 @@ $user_name = htmlspecialchars($_SESSION["user_name"]);
             margin-bottom: 1rem;
         }
 
-        /* Form Controls */
         .flex-form {
             display: flex;
             gap: 0.8rem;
@@ -505,23 +348,27 @@ $user_name = htmlspecialchars($_SESSION["user_name"]);
             color: white;
         }
 
-        .preview-bar {
-            display: none;
-            align-items: center;
-            gap: 1rem;
+        .preset-row {
+            display: flex;
+            gap: 0.8rem;
             margin-top: 1rem;
-            padding: 0.8rem;
-            background: #0f172a;
-            border-radius: 8px;
-            border: 1px dashed var(--accent);
+            flex-wrap: wrap;
+            align-items: center;
         }
 
-        .preview-thumb {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--accent);
+        .preset-btn {
+            background: #0f172a;
+            border: 1px solid var(--card-border);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            border-color: var(--accent);
         }
 
         .details-grid {
@@ -591,13 +438,12 @@ $user_name = htmlspecialchars($_SESSION["user_name"]);
 <body>
 
     <nav>
-        <a href="dashboard.php" class="brand">INAAM Profile</a>
+        <a href="dashboard.html" class="brand">INAAM Profile</a>
         <div class="nav-links">
             <a href="index.html">Home</a>
-            <a href="dashboard.php">Dashboard</a>
-            <a href="profile.php" class="active">Profile</a>
-            <a href="activity.php">Activity</a>
-            <a href="logout.php" style="color: #f87171;">Logout</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="profile.html" class="active">Profile</a>
+            <a href="activity.html">Activity</a>
         </div>
     </nav>
 
@@ -607,109 +453,77 @@ $user_name = htmlspecialchars($_SESSION["user_name"]);
             <div class="profile-body">
                 <div class="avatar-wrap">
                     <div class="avatar-container">
-                        <div class="avatar-lg" id="avatarDisplay">
-                            <?php if (!empty($profile_image) && file_exists(__DIR__ . "/" . $profile_image)): ?>
-                                <img src="<?php echo htmlspecialchars($profile_image); ?>" alt="Avatar" class="avatar-img">
-                            <?php else: ?>
-                                <span><?php echo strtoupper(substr($user_name, 0, 1)); ?></span>
-                            <?php endif; ?>
+                        <div id="profAvatar" class="avatar-lg">
+                            <span id="initialText">I</span>
                         </div>
-                        <label for="phpPicInput" class="avatar-camera-btn" title="Change Profile Picture">📷</label>
+                        <label for="localPicInput" class="avatar-camera-btn" title="Set Profile Picture">📷</label>
                     </div>
                     <span class="badge-status">Active Account</span>
                 </div>
 
                 <div class="user-title">
-                    <h1><?php echo $user_name; ?></h1>
-                    <p><?php echo $user_email; ?> &bull; Web Development Student</p>
+                    <h1 id="profName">INAAM</h1>
+                    <p id="profEmail">domicle672@gmail.com &bull; Web Development Student</p>
                 </div>
 
-                <?php if (!empty($message)): ?>
-                    <div class="alert-box <?php echo ($message_type === 'success') ? 'alert-success' : 'alert-error'; ?>">
-                        <?php echo htmlspecialchars($message); ?>
-                    </div>
-                <?php endif; ?>
+                <div id="alertBox" class="alert-box"></div>
 
-                <!-- Profile Picture Upload Section -->
+                <!-- Profile Picture Management Section -->
                 <div class="feature-box">
                     <div class="feature-header">
                         <h3>🖼️ Profile Picture</h3>
-                        <?php if (!empty($profile_image)): ?>
-                            <span class="change-pill pill-available">Photo Set</span>
-                        <?php else: ?>
-                            <span class="change-pill pill-available">Default Avatar</span>
-                        <?php endif; ?>
+                        <span id="picStatusPill" class="change-pill pill-available">Default Avatar</span>
                     </div>
+
                     <p class="change-desc">
-                        Personalize your account with a custom profile picture (JPG, PNG, WEBP, or GIF up to 5MB).
+                        Upload your personal photo or choose an avatar icon below:
                     </p>
 
-                    <form method="POST" enctype="multipart/form-data" id="photoUploadForm">
-                        <input type="file" name="profile_pic" id="phpPicInput" class="file-upload-input" accept="image/*">
-                        
-                        <div class="flex-form">
-                            <label for="phpPicInput" class="btn-custom btn-secondary">
-                                📁 Choose Picture
-                            </label>
-                            <button type="submit" name="upload_picture" id="btnUploadPic" class="btn-custom" style="display: none;">
-                                ⬆️ Save Picture
-                            </button>
-                            <?php if (!empty($profile_image)): ?>
-                                <button type="submit" name="remove_picture" class="btn-custom btn-danger">
-                                    🗑️ Remove Picture
-                                </button>
-                            <?php endif; ?>
-                        </div>
+                    <input type="file" id="localPicInput" class="file-upload-input" accept="image/*">
+                    <div class="flex-form">
+                        <label for="localPicInput" class="btn-custom btn-secondary">
+                            📁 Choose Picture
+                        </label>
+                        <button type="button" id="btnRemovePic" class="btn-custom btn-danger" style="display: none;">
+                            🗑️ Remove Picture
+                        </button>
+                    </div>
 
-                        <!-- Live Image Selection Preview -->
-                        <div id="previewContainer" class="preview-bar">
-                            <img id="previewImg" class="preview-thumb" alt="Preview">
-                            <span id="previewName" style="font-size: 0.9rem; color: #cbd5e1; flex: 1;"></span>
-                            <span style="font-size: 0.8rem; color: var(--accent);">Ready to save! Click "Save Picture"</span>
-                        </div>
-                    </form>
+                    <!-- Preset Avatars -->
+                    <div class="preset-row">
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">Or pick a preset:</span>
+                        <button type="button" class="preset-btn" onclick="setPresetAvatar('👨‍💻')">👨‍💻 Coder</button>
+                        <button type="button" class="preset-btn" onclick="setPresetAvatar('🎓')">🎓 Student</button>
+                        <button type="button" class="preset-btn" onclick="setPresetAvatar('🚀')">🚀 Astronaut</button>
+                        <button type="button" class="preset-btn" onclick="setPresetAvatar('🕶️')">🕶️ Cool Dev</button>
+                    </div>
                 </div>
 
-                <!-- One-time Name Change Feature -->
+                <!-- One-time Name Change Section -->
                 <div class="feature-box">
                     <div class="feature-header">
                         <h3>✏️ Username Settings</h3>
-                        <?php if ($name_changed == 0): ?>
-                            <span class="change-pill pill-available">1 Change Available</span>
-                        <?php else: ?>
-                            <span class="change-pill pill-locked">🔒 Locked (1/1 Used)</span>
-                        <?php endif; ?>
+                        <span id="nameStatusPill" class="change-pill pill-available">1 Change Available</span>
                     </div>
 
-                    <?php if ($name_changed == 0): ?>
-                        <p class="change-desc">
-                            ⚠️ <strong>Policy Notice:</strong> You are allowed to change your username <strong>only ONE time</strong> after registration. Once submitted, it will be permanently locked!
-                        </p>
-                        <form method="POST" class="flex-form">
-                            <input type="text" name="new_name" class="text-input" placeholder="Enter new username" required minlength="2">
-                            <button type="submit" name="update_name" class="btn-custom">Update Username (1 Left)</button>
-                        </form>
-                    <?php else: ?>
-                        <p class="change-desc" style="color: #f87171;">
-                            🔒 <strong>Username Locked:</strong> You have already used your one-time username change. Your username is permanently set to <strong><?php echo $user_name; ?></strong>.
-                        </p>
-                        <div class="flex-form">
-                            <input type="text" class="text-input" value="<?php echo $user_name; ?>" disabled>
-                            <button type="button" class="btn-custom" disabled>🔒 Changes Locked</button>
-                        </div>
-                    <?php endif; ?>
+                    <p id="nameNoticeText" class="change-desc">
+                        ⚠️ <strong>Policy Notice:</strong> You are allowed to change your username <strong>only ONE time</strong> after registration. Once submitted, it will be permanently locked!
+                    </p>
+
+                    <form id="nameChangeForm" class="flex-form">
+                        <input type="text" id="inputNewName" class="text-input" placeholder="Enter new username" required minlength="2">
+                        <button type="submit" id="btnSaveName" class="btn-custom">Update Username (1 Left)</button>
+                    </form>
                 </div>
 
                 <div class="details-grid">
                     <div class="detail-item">
-                        <div class="detail-label">User ID</div>
-                        <div class="detail-val">#<?php echo $user_id; ?></div>
+                        <div class="detail-label">Status</div>
+                        <div class="detail-val" style="color: #34d399;">Active ●</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Username Change Status</div>
-                        <div class="detail-val" style="<?php echo ($name_changed == 0) ? 'color: #34d399;' : 'color: #f87171;'; ?>">
-                            <?php echo ($name_changed == 0) ? 'Available (0/1 used)' : 'Locked (1/1 used)'; ?>
-                        </div>
+                        <div class="detail-label">Username Change Limit</div>
+                        <div id="displayChangeLimit" class="detail-val" style="color: #34d399;">Available (0/1 used)</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Enrolled Degree</div>
@@ -722,8 +536,8 @@ $user_name = htmlspecialchars($_SESSION["user_name"]);
                 </div>
 
                 <div class="actions">
-                    <a href="dashboard.php" class="btn btn-primary">&larr; Back to Dashboard</a>
-                    <a href="activity.php" class="btn btn-outline">⚡ User Activity</a>
+                    <a href="dashboard.html" class="btn btn-primary">&larr; Back to Dashboard</a>
+                    <a href="activity.html" class="btn btn-outline">⚡ User Activity</a>
                     <a href="index.html" class="btn btn-outline">Visit Website</a>
                 </div>
             </div>
@@ -731,24 +545,141 @@ $user_name = htmlspecialchars($_SESSION["user_name"]);
     </div>
 
     <script>
-        const picInput = document.getElementById('phpPicInput');
-        const previewContainer = document.getElementById('previewContainer');
-        const previewImg = document.getElementById('previewImg');
-        const previewName = document.getElementById('previewName');
-        const btnUploadPic = document.getElementById('btnUploadPic');
+        const savedUserStr = localStorage.getItem('currentUser');
+        let user = { name: 'INAAM', email: 'domicle672@gmail.com', name_changed: 0, avatar: '' };
 
-        picInput.addEventListener('change', function () {
+        if (savedUserStr) {
+            try {
+                user = Object.assign(user, JSON.parse(savedUserStr));
+            } catch (e) {}
+        }
+
+        const profName = document.getElementById('profName');
+        const profAvatar = document.getElementById('profAvatar');
+        const profEmail = document.getElementById('profEmail');
+        const nameStatusPill = document.getElementById('nameStatusPill');
+        const nameNoticeText = document.getElementById('nameNoticeText');
+        const inputNewName = document.getElementById('inputNewName');
+        const btnSaveName = document.getElementById('btnSaveName');
+        const displayChangeLimit = document.getElementById('displayChangeLimit');
+        const alertBox = document.getElementById('alertBox');
+        const nameChangeForm = document.getElementById('nameChangeForm');
+
+        const localPicInput = document.getElementById('localPicInput');
+        const btnRemovePic = document.getElementById('btnRemovePic');
+        const picStatusPill = document.getElementById('picStatusPill');
+
+        function renderAvatar() {
+            if (user.avatar) {
+                if (user.avatar.startsWith('data:image') || user.avatar.startsWith('http') || user.avatar.startsWith('uploads/')) {
+                    profAvatar.innerHTML = '<img src="' + user.avatar + '" alt="Avatar" class="avatar-img">';
+                } else {
+                    // Emoji preset
+                    profAvatar.innerHTML = '<span style="font-size: 2.8rem;">' + user.avatar + '</span>';
+                }
+                btnRemovePic.style.display = 'inline-flex';
+                picStatusPill.textContent = 'Custom Avatar Set';
+            } else {
+                profAvatar.innerHTML = '<span>' + user.name.charAt(0).toUpperCase() + '</span>';
+                btnRemovePic.style.display = 'none';
+                picStatusPill.textContent = 'Default Avatar';
+            }
+        }
+
+        function updateUI() {
+            profName.textContent = user.name;
+            profEmail.textContent = user.email + ' • Web Development Student';
+            renderAvatar();
+
+            if (user.name_changed && user.name_changed >= 1) {
+                nameStatusPill.className = 'change-pill pill-locked';
+                nameStatusPill.textContent = '🔒 Locked (1/1 Used)';
+                nameNoticeText.innerHTML = '<span style="color: #f87171;">🔒 <strong>Username Locked:</strong> You have already used your 1 allowed username change. Further changes are permanently disabled.</span>';
+                inputNewName.value = user.name;
+                inputNewName.disabled = true;
+                btnSaveName.disabled = true;
+                btnSaveName.textContent = '🔒 Changes Locked';
+                displayChangeLimit.textContent = 'Locked (1/1 used)';
+                displayChangeLimit.style.color = '#f87171';
+            } else {
+                nameStatusPill.className = 'change-pill pill-available';
+                nameStatusPill.textContent = '1 Change Available';
+                inputNewName.disabled = false;
+                btnSaveName.disabled = false;
+                btnSaveName.textContent = 'Update Username (1 Left)';
+                displayChangeLimit.textContent = 'Available (0/1 used)';
+                displayChangeLimit.style.color = '#34d399';
+            }
+        }
+
+        updateUI();
+
+        // Image file upload handler
+        localPicInput.addEventListener('change', function () {
             const file = this.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function (e) {
-                    previewImg.src = e.target.result;
-                    previewName.textContent = file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
-                    previewContainer.style.display = 'flex';
-                    btnUploadPic.style.display = 'inline-flex';
+                    user.avatar = e.target.result;
+                    saveUser();
+                    showAlert('✅ Profile picture updated successfully!', true);
+                    renderAvatar();
                 };
                 reader.readAsDataURL(file);
             }
+        });
+
+        // Preset avatar handler
+        window.setPresetAvatar = function (emoji) {
+            user.avatar = emoji;
+            saveUser();
+            showAlert('✅ Avatar set to ' + emoji + '!', true);
+            renderAvatar();
+        };
+
+        // Remove picture handler
+        btnRemovePic.addEventListener('click', function () {
+            user.avatar = '';
+            saveUser();
+            showAlert('Profile picture removed. Reverted to default avatar.', true);
+            renderAvatar();
+        });
+
+        function saveUser() {
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            if (user.email) {
+                localStorage.setItem('user_' + user.email, JSON.stringify(user));
+            }
+        }
+
+        function showAlert(msg, isSuccess) {
+            alertBox.className = 'alert-box ' + (isSuccess ? 'alert-success' : 'alert-error');
+            alertBox.textContent = msg;
+            alertBox.style.display = 'block';
+        }
+
+        nameChangeForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            if (user.name_changed && user.name_changed >= 1) {
+                showAlert('🔒 You have already changed your username once! No more changes allowed.', false);
+                return;
+            }
+
+            const newName = inputNewName.value.trim();
+            if (!newName) return;
+
+            if (newName === user.name) {
+                showAlert('The new username cannot be identical to your current username.', false);
+                return;
+            }
+
+            user.name = newName;
+            user.name_changed = 1;
+            saveUser();
+
+            showAlert('✅ Username successfully updated to "' + newName + '"! (Your 1-time change limit is now used up).', true);
+            updateUI();
         });
     </script>
 

@@ -98,6 +98,18 @@
             color: white;
         }
 
+        .nav-links .btn-register {
+            background: linear-gradient(135deg, var(--primary), #6366f1);
+            color: #ffffff !important;
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.4);
+        }
+
+        .nav-links .btn-register:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
         /* Container Layout */
         .container {
             max-width: 900px;
@@ -271,9 +283,10 @@
         <a href="index.html" class="nav-brand">INAAM's Website</a>
         <div class="nav-links">
             <a href="index.html" class="active">Home</a>
-            <a href="login.php" class="btn-login">Login</a>
-            <a href="register.php">Register</a>
-            <a href="profile.php">Profile</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="profile.html">Profile</a>
+            <a href="login.html" class="btn-login">Login</a>
+            <a href="register.html" class="btn-register">Register</a>
         </div>
     </nav>
 
