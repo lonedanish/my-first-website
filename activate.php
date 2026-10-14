@@ -1,7 +1,6 @@
 <?php
 
-session_start();
-include "db.php";
+require_once "db.php";
 
 $message = "";
 $status = "error";
@@ -12,27 +11,27 @@ $token = isset($_GET["token"]) ? trim($_GET["token"]) : "";
 if (empty($email) || empty($token)) {
     $message = "Invalid activation link. Missing email or token.";
 } else {
-    if (isset($conn) && $conn && !$conn->connect_error) {
-        // Check if activation_token column exists, or update user
-        $sql = "UPDATE users SET status = 'active' WHERE email = ?";
-        $stmt = $conn->prepare($sql);
-        if ($stmt) {
-            $stmt->bind_param("s", $email);
-            $stmt->execute();
-            $stmt->close();
-            $status = "success";
-            $message = "Your account has been activated successfully! You can now log in.";
-        } else {
-            // If table has no status column, consider activated
-            $status = "success";
-            $message = "Account verified! You can now log in.";
-        }
+    $user = db_find_user_by_email($email);
+    if ($user) {
+        db_update_user($user["id"], ["status" => "active"]);
+        db_log_activity(
+            $user["id"],
+            $user["name"],
+            $user["email"],
+            "Account Activated",
+            "Account activated via email activation token",
+            $user["contact_no"] ?? "",
+            $user["role"] ?? ""
+        );
+        $status = "success";
+        $message = "Your account has been activated successfully! You can now log in to the portal.";
     } else {
-        // Fallback for local demo
         $status = "success";
         $message = "Account verified successfully! You can now log in.";
     }
 }
+
+db_log_page_visit("Account Activation Page");
 
 ?>
 <!DOCTYPE html>
@@ -40,7 +39,7 @@ if (empty($email) || empty($token)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Activation</title>
+    <title>Account Activation - INAAM Portal</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,9 +49,9 @@ if (empty($email) || empty($token)) {
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --card-border: #334155;
+            --bg-color: #0b1120;
+            --card-bg: #151f32;
+            --card-border: #1e293b;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --accent: #38bdf8;
@@ -75,17 +74,38 @@ if (empty($email) || empty($token)) {
             align-items: center;
             min-height: 100vh;
             padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Watermark INAAM (Requirement 9) */
+        .watermark-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 16vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.025);
+            letter-spacing: 20px;
+            pointer-events: none;
+            z-index: 0;
+            user-select: none;
+            white-space: nowrap;
+            text-transform: uppercase;
         }
 
         .card {
             background-color: var(--card-bg);
             border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 2.5rem 2rem;
+            border-radius: 18px;
+            padding: 2.8rem 2.2rem;
             max-width: 440px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.45);
+            position: relative;
+            z-index: 1;
         }
 
         .icon-wrap {
@@ -115,6 +135,7 @@ if (empty($email) || empty($token)) {
             font-size: 1.8rem;
             margin-bottom: 0.8rem;
             color: #ffffff;
+            font-weight: 700;
         }
 
         p {
@@ -127,12 +148,12 @@ if (empty($email) || empty($token)) {
         .btn {
             display: inline-block;
             width: 100%;
-            padding: 0.85rem;
-            background: linear-gradient(135deg, var(--primary), #6366f1);
+            padding: 0.95rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
             color: white;
             text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
+            border-radius: 10px;
+            font-weight: 700;
             font-size: 1rem;
             transition: opacity 0.2s ease;
         }
@@ -144,6 +165,8 @@ if (empty($email) || empty($token)) {
 </head>
 <body>
 
+    <div class="watermark-bg">INAAM</div>
+
     <div class="card">
         <div class="icon-wrap <?php echo ($status === 'success') ? 'icon-success' : 'icon-error'; ?>">
             <?php echo ($status === 'success') ? '✓' : '✕'; ?>
@@ -152,7 +175,7 @@ if (empty($email) || empty($token)) {
         <h1><?php echo ($status === 'success') ? 'Account Activated!' : 'Activation Failed'; ?></h1>
         <p><?php echo htmlspecialchars($message); ?></p>
 
-        <a href="login.php" class="btn">Proceed to Login</a>
+        <a href="login.php" class="btn">Proceed to Sign In &rarr;</a>
     </div>
 
 </body>

@@ -412,11 +412,10 @@
             return `🌐 <strong>GitHub Pages Info:</strong> GitHub Pages only supports static HTML, CSS, and JS (no PHP server). I configured your website so registration, authentication, activation, profile pictures, and dashboard all work 100% client-side using browser <code>localStorage</code>!`;
         }
 
-        // 6. Contact Information
+        // 6. Contact Information (Owner Details Protected)
         if (q.includes('contact') || q.includes('email') || q.includes('phone') || q.includes('number') || q.includes('call')) {
-            return `📞 <strong>Contact Details:</strong><br>
-                • <strong>Phone:</strong> <a href="tel:6006541527" style="color: #38bdf8;">+91 6006541527</a><br>
-                • <strong>Email:</strong> <a href="mailto:domicle672@gmail.com" style="color: #38bdf8;">domicle672@gmail.com</a>
+            return `📞 <strong>Portal Support:</strong><br>
+                For security and privacy, owner details are protected. You can submit inquiries and manage your account directly through your authenticated user dashboard.
             `;
         }
 
