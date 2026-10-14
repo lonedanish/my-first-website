@@ -4,23 +4,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My First Website</title>
+    <title>INAAM Portal - Login &amp; Registration</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
     <style>
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
-            --primary-light: #e0e7ff;
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --card-border: #334155;
+            --bg-color: #0b1120;
+            --card-bg: #151f32;
+            --card-border: #1e293b;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --accent: #38bdf8;
+            --success: #10b981;
+            --error: #ef4444;
         }
 
         * {
@@ -30,108 +32,89 @@
         }
 
         body {
-            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Outfit', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            line-height: 1.6;
             min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
         }
 
-        /* Navigation Bar */
-        nav {
+        /* Watermark INAAM (Requirement 9) */
+        .watermark-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 16vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.025);
+            letter-spacing: 20px;
+            pointer-events: none;
+            z-index: 0;
+            user-select: none;
+            white-space: nowrap;
+            text-transform: uppercase;
+        }
+
+        /* Public Navigation - Clean (Requirement 8) */
+        nav.portal-nav {
             background-color: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--card-border);
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            padding: 1.1rem 2rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0.8rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
             max-width: 1200px;
+            width: 100%;
             margin: 0 auto;
         }
 
-        .nav-brand {
-            font-size: 1.3rem;
-            font-weight: 700;
+        .portal-brand {
+            font-size: 1.35rem;
+            font-weight: 800;
             color: var(--accent);
             text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             letter-spacing: 0.5px;
         }
 
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            list-style: none;
+        .portal-badge {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #ffffff;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 700;
         }
 
-        .nav-links a {
-            color: var(--text-muted);
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-weight: 500;
-            font-size: 0.95rem;
-            transition: all 0.2s ease-in-out;
-        }
-
-        .nav-links a:hover {
-            color: var(--text-main);
-            background-color: rgba(255, 255, 255, 0.08);
-        }
-
-        .nav-links a.active {
-            color: #fff;
-            background-color: var(--primary);
-        }
-
-        .nav-links .btn-login {
-            border: 1px solid var(--primary);
-            color: var(--accent);
-        }
-
-        .nav-links .btn-login:hover {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .nav-links .btn-register {
-            background: linear-gradient(135deg, var(--primary), #6366f1);
-            color: #ffffff !important;
-            font-weight: 600;
-            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.4);
-        }
-
-        .nav-links .btn-register:hover {
-            opacity: 0.95;
-            transform: translateY(-1px);
-        }
-
-        /* Container Layout */
         .container {
-            max-width: 900px;
-            margin: 2rem auto;
-            padding: 0 1.5rem 3rem;
+            max-width: 800px;
+            width: 100%;
+            margin: 2.5rem auto 4rem;
+            padding: 0 1.5rem;
+            position: relative;
+            z-index: 1;
+            flex: 1;
         }
 
-        /* Hero / Welcome Section */
-        .hero-section {
-            background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(56, 189, 248, 0.08));
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 2.5rem;
+        .portal-hero {
             text-align: center;
             margin-bottom: 2rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
-        .hero-section h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #ffffff;
+        .portal-hero h1 {
+            font-size: 2.6rem;
+            font-weight: 800;
             background: linear-gradient(to right, #ffffff, var(--accent));
             -webkit-background-clip: text;
             background-clip: text;
@@ -139,237 +122,413 @@
             margin-bottom: 0.5rem;
         }
 
-        .hero-section p {
+        .portal-hero p {
             color: var(--text-muted);
-            font-size: 1.15rem;
+            font-size: 1.1rem;
         }
 
-        /* Card Section */
-        .card {
-            background-color: var(--card-bg);
+        /* Tab Switcher */
+        .tab-switcher {
+            display: flex;
+            background: rgba(15, 23, 42, 0.9);
             border: 1px solid var(--card-border);
             border-radius: 14px;
-            padding: 1.8rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
-            transition: transform 0.2s ease, border-color 0.2s ease;
+            padding: 6px;
+            margin-bottom: 1.8rem;
+            max-width: 440px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        .card:hover {
-            border-color: rgba(56, 189, 248, 0.4);
-        }
-
-        .card h2 {
-            font-size: 1.4rem;
-            color: var(--text-main);
-            margin-bottom: 1rem;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.08);
-            padding-bottom: 0.5rem;
-        }
-
-        .card h3 {
-            font-size: 1.15rem;
-            color: var(--accent);
-            margin-bottom: 1rem;
-        }
-
-        .about-text p {
-            margin-bottom: 0.8rem;
-            color: #cbd5e1;
-            font-size: 1.02rem;
-        }
-
-        /* Education Table */
-        .table-container {
-            overflow-x: auto;
-            margin: 1rem 0;
-            border-radius: 10px;
-            border: 1px solid var(--card-border);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            background-color: #162032;
-        }
-
-        th {
-            background-color: #0b1120;
-            color: var(--accent);
+        .tab-btn {
+            flex: 1;
             padding: 12px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 1rem;
             font-weight: 600;
-            font-size: 0.95rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--card-border);
-        }
-
-        td {
-            padding: 12px 16px;
-            color: #e2e8f0;
-            border-bottom: 1px solid rgba(51, 65, 85, 0.6);
-            font-size: 0.95rem;
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        tr:hover td {
-            background-color: rgba(56, 189, 248, 0.05);
-        }
-
-        .year-badge {
-            display: inline-block;
-            background: rgba(56, 189, 248, 0.15);
-            color: var(--accent);
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-weight: 500;
-            font-size: 0.85rem;
-        }
-
-        /* Contact Details */
-        .contact-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-            margin-top: 0.8rem;
-        }
-
-        .contact-item {
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 0.8rem;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--primary), #6366f1);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+        }
+
+        .auth-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.45);
+        }
+
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+        }
+
+        @media (max-width: 650px) {
+            .form-grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-card {
+                padding: 1.8rem 1.2rem;
+            }
+
+            .portal-hero h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.45rem;
+            font-size: 0.88rem;
             color: #cbd5e1;
+            font-weight: 500;
         }
 
-        .contact-label {
-            font-weight: 600;
-            color: var(--text-muted);
-            min-width: 70px;
+        input,
+        select {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background-color: #0b1120;
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        .contact-link {
-            color: var(--accent);
-            text-decoration: none;
-            transition: color 0.2s ease;
+        input:focus,
+        select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
         }
 
-        .contact-link:hover {
-            text-decoration: underline;
-            color: #7dd3fc;
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.1em;
+            padding-right: 2.5rem;
         }
 
-        /* Footer */
+        .btn-action {
+            width: 100%;
+            padding: 0.95rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            margin-top: 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            opacity: 0.95;
+        }
+
         footer {
             text-align: center;
-            color: var(--text-muted);
-            font-size: 0.9rem;
             padding: 2rem 0;
+            color: var(--text-muted);
+            font-size: 0.88rem;
             border-top: 1px solid var(--card-border);
-            max-width: 900px;
-            margin: 0 auto;
+            margin-top: auto;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- Header Navigation -->
-    <nav id="main-nav">
-        <a href="index.html" class="nav-brand">INAAM's Website</a>
-        <div class="nav-links">
-            <a href="index.html" class="active">Home</a>
-            <a href="dashboard.html">Dashboard</a>
-            <a href="profile.html">Profile</a>
-            <a href="login.html" class="btn-login">Login</a>
-            <a href="register.html" class="btn-register">Register</a>
+    <div class="watermark-bg">INAAM</div>
+
+    <!-- Navigation Header - Public Portal Only (Requirement 4 & 8) -->
+    <nav class="portal-nav">
+        <a href="index.html" class="portal-brand">
+            <span>INAAM Portal</span>
+            <span class="portal-badge">PORTAL</span>
+        </a>
+        <div style="font-size: 0.88rem; color: var(--text-muted);">
+            <span>Secure Access</span>
         </div>
     </nav>
 
     <div class="container">
 
-        <!-- Welcome Banner -->
-        <header class="hero-section">
-            <h1>Hello, INAAM</h1>
-            <p>Welcome to my first website.</p>
-        </header>
+        <div class="portal-hero">
+            <h1>Welcome to INAAM Portal</h1>
+            <p>Sign in to your account or create a new registration</p>
+        </div>
 
-        <!-- About Me Section -->
-        <section class="card">
-            <h2>About Me</h2>
-            <div class="about-text">
-                <p>Hello,</p>
-                <p>My name is <strong>INAAM</strong>, and I am learning web development.</p>
-                <p>In my free time, I enjoy coding, reading, and exploring new technologies.</p>
-                <p>Feel free to reach out to me if you have any questions or want to collaborate!</p>
-            </div>
-        </section>
+        <!-- Tab Controls: Login vs Registration (Requirement 4) -->
+        <div class="tab-switcher">
+            <button type="button" class="tab-btn active" onclick="switchTab('login')">
+                <span>🔐</span>
+                <span>Sign In</span>
+            </button>
+            <button type="button" class="tab-btn" onclick="switchTab('register')">
+                <span>📝</span>
+                <span>Create Account</span>
+            </button>
+        </div>
 
-        <!-- Education Section -->
-        <section class="card">
-            <h2>Education</h2>
-            <h3>My Academic Qualifications</h3>
+        <!-- LOGIN FORM SECTION -->
+        <div id="section-login" class="auth-card">
+            <h2 style="font-size: 1.5rem; margin-bottom: 0.4rem; color: white; text-align: center;">Sign In to Your
+                Account</h2>
+            <p style="color: var(--text-muted); text-align: center; margin-bottom: 1.8rem; font-size: 0.92rem;">Enter
+                your credentials to enter the dashboard</p>
 
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Course</th>
-                            <th>College / Institute</th>
-                            <th>Passing Year</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>BCA</strong></td>
-                            <td>Universal Group of Management And Technology</td>
-                            <td><span class="year-badge">2028</span></td>
-                        </tr>
-                        <tr>
-                            <td>12th</td>
-                            <td>BHSS Sogam</td>
-                            <td><span class="year-badge">2024</span></td>
-                        </tr>
-                        <tr>
-                            <td>11th</td>
-                            <td>BHSS Sogam</td>
-                            <td><span class="year-badge">2023</span></td>
-                        </tr>
-                        <tr>
-                            <td>10th</td>
-                            <td>BHSS Sogam</td>
-                            <td><span class="year-badge">2022</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+            <form action="login.php" method="POST" onsubmit="handleLoginSubmit(event)">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" placeholder="name@example.com" required>
+                </div>
 
-        <!-- Contact Section -->
-        <section class="card">
-            <h2>Contact Information</h2>
-            <p style="color: var(--text-muted); margin-bottom: 0.5rem;">Need help? Feel free to connect:</p>
-            <ul class="contact-list">
-                <li class="contact-item">
-                    <span class="contact-label">Phone:</span>
-                    <a href="tel:6006541527" class="contact-link">+91 6006541527</a>
-                </li>
-                <li class="contact-item">
-                    <span class="contact-label">Email:</span>
-                    <a href="mailto:domicle672@gmail.com" class="contact-link">domicle672@gmail.com</a>
-                </li>
-            </ul>
-        </section>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="Enter your password" required>
+                </div>
 
-        <footer>
-            <p>&copy; 2026 INAAM. Built with HTML & CSS.</p>
-        </footer>
+                <button type="submit" class="btn-action">Log In &rarr;</button>
+            </form>
+        </div>
+
+        <!-- REGISTRATION FORM SECTION (Requirement 11, 12, 13, 15) -->
+        <div id="section-register" class="auth-card" style="display: none;">
+            <h2 style="font-size: 1.5rem; margin-bottom: 0.4rem; color: white; text-align: center;">New Candidate
+                Registration</h2>
+            <p style="color: var(--text-muted); text-align: center; margin-bottom: 1.8rem; font-size: 0.92rem;">Fill in
+                your details below to begin the assessment</p>
+
+            <form action="register.php" method="POST" onsubmit="handleRegisterSubmit(event)">
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" name="name" placeholder="e.g. John Doe" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email Address *</label>
+                        <input type="email" name="email" placeholder="name@example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password *</label>
+                        <input type="password" name="password" placeholder="Create password" required minlength="4">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Contact No (Phone) *</label>
+                        <input type="tel" name="contact_no" placeholder="e.g. +91 9876543210" required>
+                    </div>
+
+                    <!-- Role Selection (Requirement 11, 12, 15) -->
+                    <div class="form-group">
+                        <label>Your Role *</label>
+                        <select name="role" required>
+                            <option value="Web Developer">Web Developer</option>
+                            <option value="Web Programming">Web Programming</option>
+                            <option value="Fresher">Fresher</option>
+                        </select>
+                    </div>
+
+                    <!-- Qualification (Requirement 13) -->
+                    <div class="form-group">
+                        <label>Qualification *</label>
+                        <select name="qualification" required>
+                            <option value="BCA">BCA (Bachelor of Computer Applications)</option>
+                            <option value="12th">12th Standard</option>
+                            <option value="11th">11th Standard</option>
+                            <option value="10th">10th Standard</option>
+                            <option value="B.Tech">B.Tech / B.E.</option>
+                            <option value="MCA">MCA / M.Sc</option>
+                            <option value="Graduate">Other Graduate</option>
+                        </select>
+                    </div>
+
+                    <!-- Parentage (Requirement 13) -->
+                    <div class="form-group">
+                        <label>Parentage (Father / Guardian) *</label>
+                        <input type="text" name="parentage" placeholder="Father or Guardian Name" required>
+                    </div>
+
+                    <!-- Course Enrolled (Requirement 13) -->
+                    <div class="form-group">
+                        <label>Course Enrolled *</label>
+                        <input type="text" name="course_enrolled" placeholder="e.g. BCA or Full Stack Web Development"
+                            required value="BCA">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-action">Create Account &amp; Proceed to Quiz &rarr;</button>
+            </form>
+        </div>
 
     </div>
+
+    <footer>
+        <p>&copy; 2026 INAAM Web Portal. Built with Security &amp; Performance.</p>
+    </footer>
+
+    <script>
+        function switchTab(tab) {
+            const loginSection = document.getElementById('section-login');
+            const regSection = document.getElementById('section-register');
+            const buttons = document.querySelectorAll('.tab-btn');
+
+            if (tab === 'login') {
+                loginSection.style.display = 'block';
+                regSection.style.display = 'none';
+                buttons[0].classList.add('active');
+                buttons[1].classList.remove('active');
+            } else {
+                loginSection.style.display = 'none';
+                regSection.style.display = 'block';
+                buttons[0].classList.remove('active');
+                buttons[1].classList.add('active');
+            }
+        }
+
+        function handleRegisterSubmit(e) {
+            const isPhpServer = (window.location.protocol === 'http:' || window.location.protocol === 'https:') &&
+                (window.location.port === '80' || window.location.port === '8080' || window.location.port === '');
+
+            const form = e.target;
+            const userData = {
+                name: form.name.value.trim(),
+                email: form.email.value.trim(),
+                password: form.password.value,
+                contact_no: form.contact_no.value.trim(),
+                role: form.role.value,
+                qualification: form.qualification.value,
+                parentage: form.parentage.value.trim(),
+                course_enrolled: form.course_enrolled.value.trim(),
+                college: "Universal Group of Management And Technology",
+                school: "BHSS Sogam",
+                status: "active",
+                login_count: 1,
+                logout_count: 0,
+                quiz_score: 0,
+                created_at: new Date().toISOString()
+            };
+
+            // Save to localStorage for instant client-side preview
+            localStorage.setItem('user_' + userData.email, JSON.stringify(userData));
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+
+            let usersList = [];
+            try { usersList = JSON.parse(localStorage.getItem('all_users') || '[]'); } catch (err) { }
+            usersList = usersList.filter(u => u.email !== userData.email);
+            usersList.push(userData);
+            localStorage.setItem('all_users', JSON.stringify(usersList));
+
+            let activities = [];
+            try { activities = JSON.parse(localStorage.getItem('user_activities') || '[]'); } catch (err) { }
+            activities.unshift({
+                user_name: userData.name,
+                user_email: userData.email,
+                contact_no: userData.contact_no,
+                role: userData.role,
+                action: 'Account Registered',
+                details: 'Registered as ' + userData.role,
+                created_at: new Date().toLocaleString()
+            });
+            localStorage.setItem('user_activities', JSON.stringify(activities));
+
+            if (!isPhpServer) {
+                // Prevent navigating to register.php (which shows raw PHP in Live Server / file://)
+                e.preventDefault();
+                window.location.href = 'quiz.html';
+                return false;
+            }
+        }
+
+        function handleLoginSubmit(e) {
+            const isPhpServer = (window.location.protocol === 'http:' || window.location.protocol === 'https:') &&
+                (window.location.port === '80' || window.location.port === '8080' || window.location.port === '');
+
+            if (!isPhpServer) {
+                e.preventDefault();
+                const form = e.target;
+                const email = form.email.value.trim();
+                const password = form.password.value;
+
+                let user = null;
+                if (email.toLowerCase() === 'domicle672@gmail.com') {
+                    user = {
+                        name: 'INAAM',
+                        email: 'domicle672@gmail.com',
+                        contact_no: '6006541527',
+                        role: 'Web Developer',
+                        qualification: 'BCA',
+                        college: 'Universal Group of Management And Technology',
+                        school: 'BHSS Sogam',
+                        status: 'active',
+                        login_count: 2,
+                        logout_count: 0,
+                        quiz_score: 20
+                    };
+                } else {
+                    try {
+                        user = JSON.parse(localStorage.getItem('user_' + email));
+                    } catch (err) { }
+                }
+
+                if (user) {
+                    user.login_count = (user.login_count || 1) + 1;
+                    localStorage.setItem('user_' + email, JSON.stringify(user));
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+
+                    let activities = [];
+                    try { activities = JSON.parse(localStorage.getItem('user_activities') || '[]'); } catch (err) { }
+                    activities.unshift({
+                        user_name: user.name,
+                        user_email: user.email,
+                        contact_no: user.contact_no,
+                        role: user.role,
+                        action: 'User Login',
+                        details: 'Logged into account',
+                        created_at: new Date().toLocaleString()
+                    });
+                    localStorage.setItem('user_activities', JSON.stringify(activities));
+
+                    window.location.href = 'dashboard.html';
+                    return false;
+                } else {
+                    alert('No account found matching this email. Please register first.');
+                    return false;
+                }
+            }
+        }
+    </script>
 
 </body>
 

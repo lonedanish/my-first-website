@@ -1,27 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile</title>
-
+    <title>Edit Profile &amp; Crop Photo - INAAM Portal</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --card-border: #334155;
+            --bg-color: #0b1120;
+            --card-bg: #151f32;
+            --card-border: #1e293b;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --accent: #38bdf8;
             --success: #10b981;
+            --warning: #f59e0b;
             --error: #ef4444;
         }
 
@@ -37,26 +36,50 @@
             color: var(--text-main);
             min-height: 100vh;
             line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
         }
 
-        /* Navbar */
-        nav {
+        /* Watermark INAAM (Requirement 9) */
+        .watermark-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 16vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.025);
+            letter-spacing: 20px;
+            pointer-events: none;
+            z-index: 0;
+            user-select: none;
+            white-space: nowrap;
+            text-transform: uppercase;
+        }
+
+        nav.navbar {
             background-color: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--card-border);
             padding: 1rem 2rem;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            max-width: 1200px;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            max-width: 1280px;
             margin: 0 auto;
         }
 
         .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.3rem;
+            font-weight: 800;
             color: var(--accent);
             text-decoration: none;
-            font-size: 1.25rem;
-            font-weight: 700;
         }
 
         .nav-links {
@@ -71,618 +94,559 @@
             padding: 0.5rem 0.9rem;
             border-radius: 8px;
             font-size: 0.95rem;
+            font-weight: 500;
             transition: all 0.2s ease;
         }
 
-        .nav-links a:hover,
-        .nav-links a.active {
+        .nav-links a:hover, .nav-links a.active {
             color: white;
-            background: rgba(255, 255, 255, 0.08);
+            background-color: rgba(255, 255, 255, 0.08);
         }
 
         .container {
-            max-width: 800px;
-            margin: 2.5rem auto;
+            max-width: 1100px;
+            margin: 2.5rem auto 4rem;
             padding: 0 1.5rem;
+            position: relative;
+            z-index: 1;
         }
 
-        .profile-card {
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 850px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
             background-color: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            margin-bottom: 2rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
         }
 
-        .profile-cover {
-            height: 120px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
+        .avatar-section {
+            text-align: center;
+        }
+
+        .profile-photo-wrapper {
             position: relative;
-        }
-
-        .profile-body {
-            padding: 0 2rem 2.5rem;
-            position: relative;
-        }
-
-        .avatar-wrap {
-            margin-top: -50px;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-        }
-
-        .avatar-container {
-            position: relative;
-            width: 105px;
-            height: 105px;
-        }
-
-        .avatar-lg {
-            width: 100%;
-            height: 100%;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 1.5rem;
             border-radius: 50%;
-            background: #0f172a;
-            border: 4px solid var(--card-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--accent);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
+            padding: 4px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.3);
         }
 
         .avatar-img {
             width: 100%;
             height: 100%;
+            border-radius: 50%;
             object-fit: cover;
-            border-radius: 50%;
-        }
-
-        .avatar-camera-btn {
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: var(--primary);
-            color: white;
-            border: 2px solid var(--card-bg);
+            background: #0f172a;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            font-size: 0.85rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-            transition: transform 0.2s ease, background 0.2s ease;
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: white;
+            overflow: hidden;
         }
 
-        .avatar-camera-btn:hover {
-            transform: scale(1.1);
-            background: var(--accent);
-            color: #0f172a;
+        .avatar-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
-        .badge-status {
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid var(--success);
-            color: #34d399;
-            padding: 0.35rem 0.9rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .user-title h1 {
-            font-size: 1.8rem;
-            margin-bottom: 0.2rem;
-            color: #ffffff;
-        }
-
-        .user-title p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
-
-        .alert-box {
-            display: none;
-            padding: 0.85rem 1.2rem;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            margin: 1.5rem 0 1rem;
-            font-weight: 500;
-        }
-
-        .alert-success {
-            background-color: rgba(16, 185, 129, 0.15);
-            border: 1px solid var(--success);
-            color: #34d399;
-        }
-
-        .alert-error {
-            background-color: rgba(239, 68, 68, 0.15);
-            border: 1px solid var(--error);
-            color: #f87171;
-        }
-
-        /* Section Cards */
-        .feature-box {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
-        }
-
-        .feature-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.8rem;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .feature-header h3 {
-            font-size: 1.1rem;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .change-pill {
-            font-size: 0.8rem;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-weight: 600;
-        }
-
-        .pill-available {
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-            border: 1px solid var(--success);
-        }
-
-        .pill-locked {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            border: 1px solid var(--error);
-        }
-
-        .change-desc {
-            font-size: 0.88rem;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-        }
-
-        .flex-form {
-            display: flex;
-            gap: 0.8rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .text-input {
-            flex: 1;
-            min-width: 200px;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--card-border);
-            background-color: #0f172a;
-            color: #ffffff;
-            font-size: 0.95rem;
-            outline: none;
-            font-family: inherit;
-        }
-
-        .text-input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
-        }
-
-        .text-input:disabled {
-            background-color: rgba(15, 23, 42, 0.4);
-            color: #64748b;
-            cursor: not-allowed;
-            border-color: rgba(51, 65, 85, 0.4);
-        }
-
-        .file-upload-input {
-            display: none;
-        }
-
-        .btn-custom {
-            padding: 0.75rem 1.4rem;
-            background: linear-gradient(135deg, var(--primary), #6366f1);
+        .btn-crop-trigger {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 600;
+            padding: 0.75rem 1.2rem;
+            border-radius: 10px;
+            font-weight: 700;
             cursor: pointer;
-            transition: opacity 0.2s ease, transform 0.15s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .btn-custom:hover {
-            opacity: 0.95;
-            transform: translateY(-1px);
-        }
-
-        .btn-custom:disabled {
-            background: #334155;
-            color: #94a3b8;
-            cursor: not-allowed;
-            transform: none;
-            opacity: 0.7;
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--card-border);
-            color: #cbd5e1;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-        }
-
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-
-        .btn-danger:hover {
-            background: #ef4444;
-            color: white;
-        }
-
-        .preset-row {
+            font-size: 0.9rem;
+            transition: all 0.2s;
             display: flex;
-            gap: 0.8rem;
-            margin-top: 1rem;
-            flex-wrap: wrap;
             align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 1rem;
         }
 
-        .preset-btn {
-            background: #0f172a;
-            border: 1px solid var(--card-border);
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            color: #e2e8f0;
-            cursor: pointer;
-            transition: border-color 0.2s ease;
-        }
-
-        .preset-btn:hover {
-            border-color: var(--accent);
-        }
-
-        .details-grid {
+        .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1.2rem;
-            margin-top: 1.8rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         @media (max-width: 600px) {
-            .details-grid {
+            .form-grid {
                 grid-template-columns: 1fr;
             }
         }
 
-        .detail-item {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--card-border);
-            padding: 1rem 1.2rem;
-            border-radius: 10px;
+        .form-group {
+            margin-bottom: 1.2rem;
         }
 
-        .detail-label {
-            color: var(--text-muted);
-            font-size: 0.82rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.3rem;
+        .form-group.full-width {
+            grid-column: 1 / -1;
         }
 
-        .detail-val {
-            color: #ffffff;
+        label {
+            display: block;
+            margin-bottom: 0.45rem;
+            font-size: 0.88rem;
+            color: #cbd5e1;
             font-weight: 500;
-            font-size: 1rem;
         }
 
-        .actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 0.75rem 1.4rem;
+        input, select {
+            width: 100%;
+            padding: 0.8rem 1rem;
             border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
+            border: 1px solid var(--card-border);
+            background-color: #0b1120;
+            color: #ffffff;
             font-size: 0.95rem;
-            transition: all 0.2s ease;
+            font-family: inherit;
+            outline: none;
         }
 
-        .btn-primary {
+        .btn-save {
             background: linear-gradient(135deg, var(--primary), #6366f1);
             color: white;
+            border: none;
+            padding: 0.9rem 1.8rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            margin-top: 0.5rem;
         }
 
-        .btn-outline {
+        /* Cropper Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        .crop-modal-content {
+            background: #151f32;
             border: 1px solid var(--card-border);
-            color: var(--accent);
+            border-radius: 20px;
+            max-width: 550px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 320px;
+            background: #090e1a;
+            border-radius: 12px;
+            border: 1px dashed var(--card-border);
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+        }
+
+        .crop-circle-overlay {
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 2px dashed var(--accent);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+            pointer-events: none;
         }
     </style>
 </head>
-
 <body>
 
-    <nav>
-        <a href="dashboard.html" class="brand">INAAM Profile</a>
+    <div class="watermark-bg">INAAM</div>
+
+    <nav class="navbar">
+        <a href="dashboard.html" class="brand">
+            <span>INAAM Portal</span>
+            <span style="font-size: 0.75rem; background: rgba(56, 189, 248, 0.15); border: 1px solid var(--accent); color: var(--accent); padding: 2px 8px; border-radius: 6px;">PROFILE</span>
+        </a>
+
         <div class="nav-links">
-            <a href="index.html">Home</a>
-            <a href="dashboard.html">Dashboard</a>
+            <a href="dashboard.html">&larr; Back to Dashboard</a>
             <a href="profile.html" class="active">Profile</a>
             <a href="activity.html">Activity</a>
+            <a href="logout.php" id="logoutBtn" style="color: #f87171;">Logout</a>
         </div>
     </nav>
 
     <div class="container">
-        <div class="profile-card">
-            <div class="profile-cover"></div>
-            <div class="profile-body">
-                <div class="avatar-wrap">
-                    <div class="avatar-container">
-                        <div id="profAvatar" class="avatar-lg">
-                            <span id="initialText">I</span>
+        <div class="profile-grid">
+
+            <div class="card avatar-section">
+                <div class="profile-photo-wrapper">
+                    <div class="avatar-img" id="avatarPreviewContainer">
+                        <span id="initialsAvatar">I</span>
+                    </div>
+                </div>
+
+                <h2 style="font-size: 1.4rem; color: white;" id="sidebarName">INAAM</h2>
+                <p style="color: var(--accent); font-weight: 600; font-size: 0.95rem;" id="sidebarRole">Web Developer</p>
+                <p style="color: var(--text-muted); font-size: 0.85rem;" id="sidebarEmail">domicle672@gmail.com</p>
+
+                <input type="file" id="photoFileInput" accept="image/*" style="display: none;" onchange="handleFileSelected(event)">
+                <button type="button" class="btn-crop-trigger" onclick="document.getElementById('photoFileInput').click()">
+                    <span>✂️</span>
+                    <span>Crop &amp; Upload Profile Photo</span>
+                </button>
+            </div>
+
+            <div class="card">
+                <h2 style="font-size: 1.4rem; color: white; margin-bottom: 0.4rem;">Edit Profile Details</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.8rem;">
+                    Update your personal profile information.
+                </p>
+
+                <!-- Flash banner shown on static save -->
+                <div id="flashBanner" style="display:none; padding:0.9rem 1.2rem; border-radius:10px; font-weight:600; margin-bottom:1.2rem; font-size:0.95rem;"></div>
+
+                <!-- action kept for PHP server; onsubmit intercepts in Live Server / file:// mode -->
+                <form action="profile.php" method="POST" onsubmit="handleProfileSave(event)">
+                    <input type="hidden" name="update_profile_info" value="1">
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="fieldName" name="name" value="INAAM" required>
                         </div>
-                        <label for="localPicInput" class="avatar-camera-btn" title="Set Profile Picture">📷</label>
+
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="fieldEmail" value="domicle672@gmail.com" readonly style="opacity: 0.7;">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Contact Number (Phone)</label>
+                            <input type="tel" id="fieldContact" name="contact_no" value="+91 6006541527" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Role in Dashboard</label>
+                            <select id="fieldRole" name="role">
+                                <option value="Web Developer" selected>Web Developer</option>
+                                <option value="Web Programming">Web Programming</option>
+                                <option value="Fresher">Fresher</option>
+                                <option value="Student">Student</option>
+                                <option value="Designer">Designer</option>
+                                <option value="Developer">Developer</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Qualification</label>
+                            <input type="text" id="fieldQualification" name="qualification" value="BCA">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Parentage</label>
+                            <input type="text" id="fieldParentage" name="parentage" value="Owner / Admin">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Course Enrolled</label>
+                            <input type="text" id="fieldCourse" name="course_enrolled" value="BCA">
+                        </div>
+
+                        <div class="form-group">
+                            <label>College</label>
+                            <input type="text" id="fieldCollege" name="college" value="Universal Group of Management And Technology">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>School</label>
+                            <input type="text" id="fieldSchool" name="school" value="BHSS Sogam">
+                        </div>
                     </div>
-                    <span class="badge-status">Active Account</span>
+
+                    <button type="submit" class="btn-save" id="saveBtn">Save Profile Changes &rarr;</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Cropping Modal -->
+    <div class="modal-overlay" id="cropModal">
+        <div class="crop-modal-content">
+            <h3 style="color: white; margin-bottom: 1rem;">✂️ Crop Profile Photo</h3>
+            <div class="canvas-container" id="canvasWrapper">
+                <canvas id="cropCanvas" width="400" height="400"></canvas>
+                <div class="crop-circle-overlay"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; gap: 1rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;flex:1;">
+                    <span style="font-size:0.85rem;color:var(--text-muted);">Zoom:</span>
+                    <input type="range" id="zoomRange" min="0.5" max="3" step="0.05" value="1" oninput="onZoomChange(this.value)" style="flex:1;padding:0;">
                 </div>
-
-                <div class="user-title">
-                    <h1 id="profName">INAAM</h1>
-                    <p id="profEmail">domicle672@gmail.com &bull; Web Development Student</p>
-                </div>
-
-                <div id="alertBox" class="alert-box"></div>
-
-                <!-- Profile Picture Management Section -->
-                <div class="feature-box">
-                    <div class="feature-header">
-                        <h3>🖼️ Profile Picture</h3>
-                        <span id="picStatusPill" class="change-pill pill-available">Default Avatar</span>
-                    </div>
-
-                    <p class="change-desc">
-                        Upload your personal photo or choose an avatar icon below:
-                    </p>
-
-                    <input type="file" id="localPicInput" class="file-upload-input" accept="image/*">
-                    <div class="flex-form">
-                        <label for="localPicInput" class="btn-custom btn-secondary">
-                            📁 Choose Picture
-                        </label>
-                        <button type="button" id="btnRemovePic" class="btn-custom btn-danger" style="display: none;">
-                            🗑️ Remove Picture
-                        </button>
-                    </div>
-
-                    <!-- Preset Avatars -->
-                    <div class="preset-row">
-                        <span style="font-size: 0.85rem; color: var(--text-muted);">Or pick a preset:</span>
-                        <button type="button" class="preset-btn" onclick="setPresetAvatar('👨‍💻')">👨‍💻 Coder</button>
-                        <button type="button" class="preset-btn" onclick="setPresetAvatar('🎓')">🎓 Student</button>
-                        <button type="button" class="preset-btn" onclick="setPresetAvatar('🚀')">🚀 Astronaut</button>
-                        <button type="button" class="preset-btn" onclick="setPresetAvatar('🕶️')">🕶️ Cool Dev</button>
-                    </div>
-                </div>
-
-                <!-- One-time Name Change Section -->
-                <div class="feature-box">
-                    <div class="feature-header">
-                        <h3>✏️ Username Settings</h3>
-                        <span id="nameStatusPill" class="change-pill pill-available">1 Change Available</span>
-                    </div>
-
-                    <p id="nameNoticeText" class="change-desc">
-                        ⚠️ <strong>Policy Notice:</strong> You are allowed to change your username <strong>only ONE time</strong> after registration. Once submitted, it will be permanently locked!
-                    </p>
-
-                    <form id="nameChangeForm" class="flex-form">
-                        <input type="text" id="inputNewName" class="text-input" placeholder="Enter new username" required minlength="2">
-                        <button type="submit" id="btnSaveName" class="btn-custom">Update Username (1 Left)</button>
-                    </form>
-                </div>
-
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <div class="detail-label">Status</div>
-                        <div class="detail-val" style="color: #34d399;">Active ●</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Username Change Limit</div>
-                        <div id="displayChangeLimit" class="detail-val" style="color: #34d399;">Available (0/1 used)</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Enrolled Degree</div>
-                        <div class="detail-val">BCA (2024 - 2028)</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">College</div>
-                        <div class="detail-val">Universal Group of Mgmt. &amp; Tech.</div>
-                    </div>
-                </div>
-
-                <div class="actions">
-                    <a href="dashboard.html" class="btn btn-primary">&larr; Back to Dashboard</a>
-                    <a href="activity.html" class="btn btn-outline">⚡ User Activity</a>
-                    <a href="index.html" class="btn btn-outline">Visit Website</a>
-                </div>
+                <button type="button" class="btn-save" onclick="applyAndSaveCrop()">Crop &amp; Save Avatar &rarr;</button>
             </div>
         </div>
     </div>
 
     <script>
-        const savedUserStr = localStorage.getItem('currentUser');
-        let user = { name: 'INAAM', email: 'domicle672@gmail.com', name_changed: 0, avatar: '' };
+        // ── Detect static server (Live Server port 5500/5501 or file://) ──
+        const isPhpServer = (
+            (window.location.protocol === 'http:' || window.location.protocol === 'https:') &&
+            (window.location.port === '' || window.location.port === '80' ||
+             window.location.port === '443' || window.location.port === '8080')
+        );
 
-        if (savedUserStr) {
+        // ── Banner helper ──
+        function showBanner(msg, type) {
+            const banner = document.getElementById('flashBanner');
+            banner.textContent = msg;
+            if (type === 'success') {
+                banner.style.cssText = 'display:block;padding:0.9rem 1.2rem;border-radius:10px;font-weight:600;margin-bottom:1.2rem;font-size:0.95rem;background:rgba(16,185,129,0.15);border:1px solid #10b981;color:#34d399;';
+            } else {
+                banner.style.cssText = 'display:block;padding:0.9rem 1.2rem;border-radius:10px;font-weight:600;margin-bottom:1.2rem;font-size:0.95rem;background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;';
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            clearTimeout(showBanner._t);
+            showBanner._t = setTimeout(() => { banner.style.display = 'none'; }, 4500);
+        }
+
+        function getInitials(name) {
+            if (!name) return 'I';
+            return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        function updateSidebar(name, role, email) {
+            const sn = document.getElementById('sidebarName');
+            const sr = document.getElementById('sidebarRole');
+            const se = document.getElementById('sidebarEmail');
+            const ia = document.getElementById('initialsAvatar');
+            if (sn) sn.textContent = name || 'INAAM';
+            if (sr) sr.textContent = role || 'Web Developer';
+            if (se) se.textContent = email || 'domicle672@gmail.com';
+            if (ia) ia.textContent = getInitials(name || 'INAAM');
+        }
+
+        function setAvatarImage(dataUrl) {
+            const container = document.getElementById('avatarPreviewContainer');
+            if (!container) return;
+            container.innerHTML = '<img src="' + dataUrl + '" alt="Profile Photo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+        }
+
+        // ── Hydrate fields from localStorage ──
+        (function hydrateFromStorage() {
             try {
-                user = Object.assign(user, JSON.parse(savedUserStr));
-            } catch (e) {}
-        }
-
-        const profName = document.getElementById('profName');
-        const profAvatar = document.getElementById('profAvatar');
-        const profEmail = document.getElementById('profEmail');
-        const nameStatusPill = document.getElementById('nameStatusPill');
-        const nameNoticeText = document.getElementById('nameNoticeText');
-        const inputNewName = document.getElementById('inputNewName');
-        const btnSaveName = document.getElementById('btnSaveName');
-        const displayChangeLimit = document.getElementById('displayChangeLimit');
-        const alertBox = document.getElementById('alertBox');
-        const nameChangeForm = document.getElementById('nameChangeForm');
-
-        const localPicInput = document.getElementById('localPicInput');
-        const btnRemovePic = document.getElementById('btnRemovePic');
-        const picStatusPill = document.getElementById('picStatusPill');
-
-        function renderAvatar() {
-            if (user.avatar) {
-                if (user.avatar.startsWith('data:image') || user.avatar.startsWith('http') || user.avatar.startsWith('uploads/')) {
-                    profAvatar.innerHTML = '<img src="' + user.avatar + '" alt="Avatar" class="avatar-img">';
-                } else {
-                    // Emoji preset
-                    profAvatar.innerHTML = '<span style="font-size: 2.8rem;">' + user.avatar + '</span>';
+                const raw = localStorage.getItem('currentUser');
+                if (!raw) return;
+                const u = JSON.parse(raw);
+                if (u.name)            document.getElementById('fieldName').value = u.name;
+                if (u.email)           document.getElementById('fieldEmail').value = u.email;
+                if (u.contact_no)      document.getElementById('fieldContact').value = u.contact_no;
+                if (u.role) {
+                    const sel = document.getElementById('fieldRole');
+                    let found = false;
+                    for (let opt of sel.options) { if (opt.value === u.role) { opt.selected = true; found = true; break; } }
+                    if (!found) { const o = new Option(u.role, u.role, true, true); sel.add(o); }
                 }
-                btnRemovePic.style.display = 'inline-flex';
-                picStatusPill.textContent = 'Custom Avatar Set';
-            } else {
-                profAvatar.innerHTML = '<span>' + user.name.charAt(0).toUpperCase() + '</span>';
-                btnRemovePic.style.display = 'none';
-                picStatusPill.textContent = 'Default Avatar';
-            }
-        }
+                if (u.qualification)   document.getElementById('fieldQualification').value = u.qualification;
+                if (u.parentage)       document.getElementById('fieldParentage').value = u.parentage;
+                if (u.course_enrolled) document.getElementById('fieldCourse').value = u.course_enrolled;
+                if (u.college)         document.getElementById('fieldCollege').value = u.college;
+                if (u.school)          document.getElementById('fieldSchool').value = u.school;
+                updateSidebar(u.name, u.role, u.email);
+                if (u.profile_image)   setAvatarImage(u.profile_image);
+            } catch(e) {}
+        })();
 
-        function updateUI() {
-            profName.textContent = user.name;
-            profEmail.textContent = user.email + ' • Web Development Student';
-            renderAvatar();
-
-            if (user.name_changed && user.name_changed >= 1) {
-                nameStatusPill.className = 'change-pill pill-locked';
-                nameStatusPill.textContent = '🔒 Locked (1/1 Used)';
-                nameNoticeText.innerHTML = '<span style="color: #f87171;">🔒 <strong>Username Locked:</strong> You have already used your 1 allowed username change. Further changes are permanently disabled.</span>';
-                inputNewName.value = user.name;
-                inputNewName.disabled = true;
-                btnSaveName.disabled = true;
-                btnSaveName.textContent = '🔒 Changes Locked';
-                displayChangeLimit.textContent = 'Locked (1/1 used)';
-                displayChangeLimit.style.color = '#f87171';
-            } else {
-                nameStatusPill.className = 'change-pill pill-available';
-                nameStatusPill.textContent = '1 Change Available';
-                inputNewName.disabled = false;
-                btnSaveName.disabled = false;
-                btnSaveName.textContent = 'Update Username (1 Left)';
-                displayChangeLimit.textContent = 'Available (0/1 used)';
-                displayChangeLimit.style.color = '#34d399';
-            }
-        }
-
-        updateUI();
-
-        // Image file upload handler
-        localPicInput.addEventListener('change', function () {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    user.avatar = e.target.result;
-                    saveUser();
-                    showAlert('✅ Profile picture updated successfully!', true);
-                    renderAvatar();
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // Preset avatar handler
-        window.setPresetAvatar = function (emoji) {
-            user.avatar = emoji;
-            saveUser();
-            showAlert('✅ Avatar set to ' + emoji + '!', true);
-            renderAvatar();
-        };
-
-        // Remove picture handler
-        btnRemovePic.addEventListener('click', function () {
-            user.avatar = '';
-            saveUser();
-            showAlert('Profile picture removed. Reverted to default avatar.', true);
-            renderAvatar();
-        });
-
-        function saveUser() {
-            localStorage.setItem('currentUser', JSON.stringify(user));
-            if (user.email) {
-                localStorage.setItem('user_' + user.email, JSON.stringify(user));
-            }
-        }
-
-        function showAlert(msg, isSuccess) {
-            alertBox.className = 'alert-box ' + (isSuccess ? 'alert-success' : 'alert-error');
-            alertBox.textContent = msg;
-            alertBox.style.display = 'block';
-        }
-
-        nameChangeForm.addEventListener('submit', function (e) {
+        // ── Profile Save Handler ──
+        function handleProfileSave(e) {
+            if (isPhpServer) return; // let PHP handle it
             e.preventDefault();
 
-            if (user.name_changed && user.name_changed >= 1) {
-                showAlert('🔒 You have already changed your username once! No more changes allowed.', false);
-                return;
+            const nameVal    = document.getElementById('fieldName').value.trim();
+            const contactVal = document.getElementById('fieldContact').value.trim();
+            const roleVal    = document.getElementById('fieldRole').value;
+            const qualVal    = document.getElementById('fieldQualification').value.trim();
+            const parentageV = document.getElementById('fieldParentage').value.trim();
+            const courseVal  = document.getElementById('fieldCourse').value.trim();
+            const collegeVal = document.getElementById('fieldCollege').value.trim();
+            const schoolVal  = document.getElementById('fieldSchool').value.trim();
+            const emailVal   = document.getElementById('fieldEmail').value.trim();
+
+            if (!nameVal) { showBanner('\u26a0 Name cannot be empty.', 'error'); return; }
+
+            let existing = {};
+            try { existing = JSON.parse(localStorage.getItem('currentUser') || '{}'); } catch(err) {}
+
+            const updated = Object.assign({}, existing, {
+                name: nameVal, email: emailVal || existing.email,
+                contact_no: contactVal, role: roleVal, qualification: qualVal,
+                parentage: parentageV, course_enrolled: courseVal,
+                college: collegeVal, school: schoolVal
+            });
+
+            localStorage.setItem('currentUser', JSON.stringify(updated));
+            const key = 'user_' + (updated.email || '').toLowerCase();
+            localStorage.setItem(key, JSON.stringify(updated));
+
+            // Log activity
+            try {
+                let acts = JSON.parse(localStorage.getItem('user_activities') || '[]');
+                acts.unshift({ user_name: nameVal, user_email: updated.email,
+                    contact_no: contactVal, role: roleVal,
+                    action: 'Profile Updated', details: 'Updated profile details',
+                    created_at: new Date().toLocaleString() });
+                localStorage.setItem('user_activities', JSON.stringify(acts));
+            } catch(err) {}
+
+            updateSidebar(nameVal, roleVal, updated.email);
+            showBanner('\u2713 Profile details updated successfully!', 'success');
+        }
+
+        // ── Logout static fix ──
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function(e) {
+                if (!isPhpServer) {
+                    e.preventDefault();
+                    localStorage.removeItem('currentUser');
+                    window.location.href = 'index.html';
+                }
+            });
+        }
+
+        // ── Canvas Cropper ──
+        let rawImage = null;
+        let imgX = 0, imgY = 0, imgScale = 1;
+        let isDragging = false, startX = 0, startY = 0;
+
+        const canvas = document.getElementById('cropCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+
+        function handleFileSelected(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                rawImage = new Image();
+                rawImage.onload = function() {
+                    document.getElementById('cropModal').style.display = 'flex';
+                    imgScale = Math.max(canvas.width / rawImage.width, canvas.height / rawImage.height);
+                    document.getElementById('zoomRange').value = imgScale;
+                    imgX = (canvas.width - rawImage.width * imgScale) / 2;
+                    imgY = (canvas.height - rawImage.height * imgScale) / 2;
+                    drawCanvas();
+                };
+                rawImage.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function closeCropModal() {
+            document.getElementById('cropModal').style.display = 'none';
+            document.getElementById('photoFileInput').value = '';
+        }
+
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!rawImage) return;
+            ctx.drawImage(rawImage, imgX, imgY, rawImage.width * imgScale, rawImage.height * imgScale);
+        }
+
+        function onZoomChange(val) {
+            const prevScale = imgScale;
+            imgScale = parseFloat(val);
+            const cx = canvas.width / 2, cy = canvas.height / 2;
+            imgX = cx - (cx - imgX) * (imgScale / prevScale);
+            imgY = cy - (cy - imgY) * (imgScale / prevScale);
+            drawCanvas();
+        }
+
+        canvasWrapper.addEventListener('mousedown', (e) => { isDragging = true; startX = e.clientX - imgX; startY = e.clientY - imgY; });
+        window.addEventListener('mousemove', (e) => { if (!isDragging) return; imgX = e.clientX - startX; imgY = e.clientY - startY; drawCanvas(); });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        canvasWrapper.addEventListener('touchstart', (e) => { if (e.touches.length === 1) { isDragging = true; startX = e.touches[0].clientX - imgX; startY = e.touches[0].clientY - imgY; } });
+        window.addEventListener('touchmove', (e) => { if (!isDragging || e.touches.length !== 1) return; imgX = e.touches[0].clientX - startX; imgY = e.touches[0].clientY - startY; drawCanvas(); });
+        window.addEventListener('touchend', () => { isDragging = false; });
+
+        function applyAndSaveCrop() {
+            const expCanvas = document.createElement('canvas');
+            const size = 300;
+            expCanvas.width = expCanvas.height = size;
+            const eCtx = expCanvas.getContext('2d');
+            eCtx.beginPath();
+            eCtx.arc(size/2, size/2, size/2, 0, Math.PI * 2);
+            eCtx.closePath();
+            eCtx.clip();
+            const cx = canvas.width/2, cy = canvas.height/2, cr = 110;
+            eCtx.drawImage(canvas, cx-cr, cy-cr, cr*2, cr*2, 0, 0, size, size);
+            const base64 = expCanvas.toDataURL('image/png');
+
+            if (isPhpServer) {
+                let form = document.getElementById('_cForm');
+                if (!form) {
+                    form = document.createElement('form');
+                    form.id = '_cForm'; form.method = 'POST'; form.action = 'profile.php'; form.style.display = 'none';
+                    const inp = document.createElement('input');
+                    inp.type = 'hidden'; inp.name = 'cropped_image_data'; inp.id = '_cInp';
+                    form.appendChild(inp); document.body.appendChild(form);
+                }
+                document.getElementById('_cInp').value = base64;
+                form.submit();
+            } else {
+                try {
+                    let u = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                    u.profile_image = base64;
+                    localStorage.setItem('currentUser', JSON.stringify(u));
+                    if (u.email) localStorage.setItem('user_' + u.email.toLowerCase(), JSON.stringify(u));
+                } catch(err) {}
+                setAvatarImage(base64);
+                closeCropModal();
+                showBanner('\u2713 Profile photo saved successfully!', 'success');
             }
+        }
 
-            const newName = inputNewName.value.trim();
-            if (!newName) return;
-
-            if (newName === user.name) {
-                showAlert('The new username cannot be identical to your current username.', false);
-                return;
-            }
-
-            user.name = newName;
-            user.name_changed = 1;
-            saveUser();
-
-            showAlert('✅ Username successfully updated to "' + newName + '"! (Your 1-time change limit is now used up).', true);
-            updateUI();
-        });
+        // 10-minute idle timeout
+        (function() {
+            const T = 10 * 60 * 1000;
+            let timer = setTimeout(() => { window.location.href = isPhpServer ? 'login.php?timeout=1' : 'index.html'; }, T);
+            ['mousemove','keydown','click'].forEach(ev => {
+                window.addEventListener(ev, () => { clearTimeout(timer); timer = setTimeout(() => { window.location.href = isPhpServer ? 'login.php?timeout=1' : 'index.html'; }, T); }, { passive: true });
+            });
+        })();
     </script>
 
 </body>
-
 </html>

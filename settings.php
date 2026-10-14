@@ -1,7 +1,7 @@
 <?php
 
-session_start();
-include "db.php";
+require_once "db.php";
+check_session_timeout();
 
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
@@ -9,10 +9,11 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 $user_id = $_SESSION["user_id"];
-$user_name = htmlspecialchars($_SESSION["user_name"]);
-$user_email = htmlspecialchars($_SESSION["user_email"]);
-$name_changed = $_SESSION["name_changed"] ?? 0;
-$profile_image = $_SESSION["profile_image"] ?? "";
+$user = db_find_user_by_id($user_id);
+$user_name = htmlspecialchars($user["name"] ?? $_SESSION["user_name"]);
+$user_email = htmlspecialchars($user["email"] ?? $_SESSION["user_email"]);
+$name_changed = $user["name_changed"] ?? ($_SESSION["name_changed"] ?? 0);
+$profile_image = $user["profile_image"] ?? ($_SESSION["profile_image"] ?? "");
 
 $message = "";
 
@@ -77,6 +78,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
             color: var(--text-main);
             min-height: 100vh;
             line-height: 1.6;
+            position: relative;
+        }
+
+        .watermark-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 16vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.025);
+            letter-spacing: 20px;
+            pointer-events: none;
+            z-index: 0;
+            user-select: none;
+            white-space: nowrap;
+            text-transform: uppercase;
         }
 
         nav {
@@ -354,6 +372,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
     </style>
 </head>
 <body>
+    <div class="watermark-bg">INAAM</div>
 
     <nav>
         <a href="dashboard.php" class="brand">Account Settings</a>
@@ -507,7 +526,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
                         <span class="faq-icon">+</span>
                     </div>
                     <div class="faq-answer">
-                        You can email directly at <strong>domicle672@gmail.com</strong> or call <strong>+91 6006541527</strong>.
+                        You can reach support through the portal helpdesk or contact system administration directly from your registered account.
                     </div>
                 </div>
             </div>
@@ -527,6 +546,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_questions"])) {
                 item.classList.toggle('active');
             });
         });
+
+        // 10-Minute session timeout (Requirement 19)
+        (function() {
+            const TIMEOUT_MS = 10 * 60 * 1000;
+            let idleTimer = setTimeout(() => { window.location.href = 'login.php?timeout=1'; }, TIMEOUT_MS);
+            ['mousemove', 'keydown', 'click'].forEach(evt => {
+                window.addEventListener(evt, () => {
+                    clearTimeout(idleTimer);
+                    idleTimer = setTimeout(() => { window.location.href = 'login.php?timeout=1'; }, TIMEOUT_MS);
+                }, { passive: true });
+            });
+        })();
     </script>
 
 </body>

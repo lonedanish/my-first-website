@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - My Website</title>
+    <title>Login - INAAM Portal</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --card-border: #334155;
+            --bg-color: #0b1120;
+            --card-bg: #151f32;
+            --card-border: #1e293b;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --accent: #38bdf8;
@@ -30,7 +30,7 @@
         }
 
         body {
-            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Outfit', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             display: flex;
@@ -38,27 +38,49 @@
             align-items: center;
             min-height: 100vh;
             padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Watermark INAAM (Requirement 9) */
+        .watermark-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 16vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.025);
+            letter-spacing: 20px;
+            pointer-events: none;
+            z-index: 0;
+            user-select: none;
+            white-space: nowrap;
+            text-transform: uppercase;
         }
 
         .login-box {
             background-color: var(--card-bg);
             border: 1px solid var(--card-border);
             width: 100%;
-            max-width: 400px;
-            padding: 2.5rem 2rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            max-width: 440px;
+            padding: 2.8rem 2.2rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
         }
 
         h1 {
             text-align: center;
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 0.4rem;
             background: linear-gradient(to right, #ffffff, var(--accent));
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            color: #ffffff;
         }
 
         .subtitle {
@@ -68,81 +90,59 @@
             margin-bottom: 1.8rem;
         }
 
-        .alert-message {
-            display: none;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            margin-bottom: 1.2rem;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .alert-success {
-            background-color: rgba(16, 185, 129, 0.15);
-            border: 1px solid var(--success);
-            color: #34d399;
-        }
-
-        .alert-error {
-            background-color: rgba(239, 68, 68, 0.15);
-            border: 1px solid var(--error);
-            color: #f87171;
-        }
-
         .form-group {
-            margin-bottom: 1.2rem;
+            margin-bottom: 1.3rem;
         }
 
         label {
             display: block;
-            margin-bottom: 0.4rem;
-            font-size: 0.9rem;
-            font-weight: 500;
+            margin-bottom: 0.45rem;
+            font-size: 0.88rem;
             color: #cbd5e1;
+            font-weight: 500;
         }
 
         input {
             width: 100%;
-            padding: 0.75rem 1rem;
+            padding: 0.85rem 1rem;
             border-radius: 8px;
             border: 1px solid var(--card-border);
-            background-color: #0f172a;
+            background-color: #0b1120;
             color: #ffffff;
             font-size: 0.95rem;
             font-family: inherit;
             outline: none;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         input:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
         }
 
         .btn-submit {
             width: 100%;
-            padding: 0.85rem;
+            padding: 0.95rem;
             background: linear-gradient(135deg, var(--primary), #6366f1);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            font-family: inherit;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 700;
             cursor: pointer;
-            margin-top: 0.5rem;
-            transition: transform 0.15s ease, opacity 0.2s ease;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            margin-top: 0.8rem;
+            transition: all 0.2s;
         }
 
         .btn-submit:hover {
+            transform: translateY(-2px);
             opacity: 0.95;
-            transform: translateY(-1px);
         }
 
         .bottom-links {
             text-align: center;
-            margin-top: 1.5rem;
+            margin-top: 1.8rem;
             padding-top: 1.2rem;
             border-top: 1px solid var(--card-border);
             font-size: 0.9rem;
@@ -154,96 +154,93 @@
             text-decoration: none;
             font-weight: 500;
         }
-
-        .bottom-links a:hover {
-            text-decoration: underline;
-        }
-
-        .back-home {
-            display: inline-block;
-            margin-top: 0.8rem;
-            font-size: 0.85rem;
-        }
     </style>
 </head>
-
 <body>
+
+    <div class="watermark-bg">INAAM</div>
 
     <div class="login-box">
         <h1>Welcome Back</h1>
-        <p class="subtitle">Enter your credentials to login</p>
+        <p class="subtitle">Access your account and personal dashboard</p>
 
-        <div id="alertBox" class="alert-message"></div>
-
-        <form id="loginForm">
+        <form action="login.php" method="POST" onsubmit="handleLoginSubmit(event)">
             <div class="form-group">
-                <label for="loginEmail">Email or Username</label>
-                <input type="text" id="loginEmail" name="email" placeholder="name@example.com" required>
+                <label>Email Address</label>
+                <input type="email" name="email" placeholder="name@example.com" required>
             </div>
 
             <div class="form-group">
-                <label for="loginPassword">Password</label>
-                <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required>
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Enter your password" required>
             </div>
 
-            <button type="submit" id="btnLogin" class="btn-submit">Login</button>
+            <button type="submit" class="btn-submit">Sign In &rarr;</button>
         </form>
 
         <div class="bottom-links">
-            <p>Don't have an account? <a href="register.html">Register here</a></p>
-            <a href="index.html" class="back-home">&larr; Back to Home</a>
+            <p>Don't have an account yet? <a href="register.html">Register here</a></p>
+            <p style="margin-top: 0.5rem;"><a href="index.html">&larr; Back to Front Portal</a></p>
         </div>
     </div>
 
     <script>
-        const loginForm = document.getElementById('loginForm');
-        const alertBox = document.getElementById('alertBox');
-        const btnLogin = document.getElementById('btnLogin');
+        function handleLoginSubmit(e) {
+            const isPhpServer = (window.location.protocol === 'http:' || window.location.protocol === 'https:') && 
+                                (window.location.port === '80' || window.location.port === '8080' || window.location.port === '');
 
-        function showAlert(msg, isSuccess) {
-            alertBox.textContent = msg;
-            alertBox.className = 'alert-message ' + (isSuccess ? 'alert-success' : 'alert-error');
-            alertBox.style.display = 'block';
-        }
+            if (!isPhpServer) {
+                e.preventDefault();
+                const form = e.target;
+                const email = form.email.value.trim();
 
-        loginForm.addEventListener('submit', function (e) {
-            e.preventDefault(); // Always handle client-side for GitHub Pages and local use!
+                let user = null;
+                if (email.toLowerCase() === 'domicle672@gmail.com') {
+                    user = {
+                        name: 'INAAM',
+                        email: 'domicle672@gmail.com',
+                        contact_no: '6006541527',
+                        role: 'Web Developer',
+                        qualification: 'BCA',
+                        college: 'Universal Group of Management And Technology',
+                        school: 'BHSS Sogam',
+                        status: 'active',
+                        login_count: 2,
+                        logout_count: 0,
+                        quiz_score: 20
+                    };
+                } else {
+                    try {
+                        user = JSON.parse(localStorage.getItem('user_' + email));
+                    } catch(err) {}
+                }
 
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
+                if (user) {
+                    user.login_count = (user.login_count || 1) + 1;
+                    localStorage.setItem('user_' + email, JSON.stringify(user));
+                    localStorage.setItem('currentUser', JSON.stringify(user));
 
-            const savedUserStr = localStorage.getItem('user_' + email) || localStorage.getItem('currentUser');
-            if (savedUserStr) {
-                try {
-                    const savedUser = JSON.parse(savedUserStr);
-                    if (savedUser.password && savedUser.password !== password) {
-                        showAlert('Incorrect password. Please try again.', false);
-                        return;
-                    }
-                    localStorage.setItem('currentUser', JSON.stringify(savedUser));
-                    showAlert('✅ Welcome back, ' + (savedUser.name || 'User') + '! Redirecting...', true);
-                    btnLogin.disabled = true;
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1000);
-                    return;
-                } catch (err) {}
+                    let activities = [];
+                    try { activities = JSON.parse(localStorage.getItem('user_activities') || '[]'); } catch(err) {}
+                    activities.unshift({
+                        user_name: user.name,
+                        user_email: user.email,
+                        contact_no: user.contact_no,
+                        role: user.role,
+                        action: 'User Login',
+                        details: 'Logged into account',
+                        created_at: new Date().toLocaleString()
+                    });
+                    localStorage.setItem('user_activities', JSON.stringify(activities));
+
+                    window.location.href = 'dashboard.html';
+                    return false;
+                } else {
+                    alert('No account found matching this email. Please register first.');
+                    return false;
+                }
             }
-
-            // Demo / first-time fallback
-            const demoUser = { 
-                name: email.split('@')[0] || 'INAAM', 
-                email: email, 
-                name_changed: 0,
-                avatar: ''
-            };
-            localStorage.setItem('currentUser', JSON.stringify(demoUser));
-            showAlert('✅ Logged in successfully! Redirecting...', true);
-            btnLogin.disabled = true;
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 1000);
-        });
+        }
     </script>
 
 </body>

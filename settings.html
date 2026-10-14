@@ -6,6 +6,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Settings &amp; Security</title>
     <!-- Google Fonts -->
+    <!-- OWNER-ONLY GUARD: runs before page renders -->
+    <script>
+        (function() {
+            const OWNER_EMAIL = 'domicle672@gmail.com';
+            const OWNER_PIN   = 'inaam2024';  // ← your secret access PIN
+            document.addEventListener('DOMContentLoaded', function() {
+                try {
+                    // Allow if unlocked this session already
+                    if (sessionStorage.getItem('ownerUnlocked') === '1') {
+                        document.getElementById('ownerGate').style.display = 'none';
+                        document.getElementById('pageContent').style.display = '';
+                        return;
+                    }
+                    var raw = localStorage.getItem('currentUser');
+                    var u   = raw ? JSON.parse(raw) : null;
+                    if (u && u.email && u.email.toLowerCase() === OWNER_EMAIL) {
+                        document.getElementById('ownerGate').style.display = 'none';
+                        document.getElementById('pageContent').style.display = '';
+                    } else {
+                        document.getElementById('ownerGate').style.display = 'flex';
+                        document.getElementById('pageContent').style.display = 'none';
+                    }
+                } catch(e) {
+                    document.getElementById('ownerGate').style.display = 'flex';
+                    document.getElementById('pageContent').style.display = 'none';
+                }
+            });
+            window.__OWNER_PIN   = OWNER_PIN;
+            window.__OWNER_EMAIL = OWNER_EMAIL;
+        })();
+    </script>
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -37,6 +69,23 @@
             color: var(--text-main);
             min-height: 100vh;
             line-height: 1.6;
+            position: relative;
+        }
+
+        .watermark-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 16vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.025);
+            letter-spacing: 20px;
+            pointer-events: none;
+            z-index: 0;
+            user-select: none;
+            white-space: nowrap;
+            text-transform: uppercase;
         }
 
         nav {
@@ -352,6 +401,40 @@
 
 <body>
 
+    <!-- OWNER PIN GATE OVERLAY -->
+    <div id="ownerGate" style="display:none; position:fixed; inset:0; z-index:99999;
+         background:linear-gradient(135deg, #0b1120 0%, #0f172a 100%);
+         flex-direction:column; align-items:center; justify-content:center;
+         font-family:'Outfit',sans-serif; padding:2rem;">
+        <div style="text-align:center; max-width:420px; width:100%;">
+            <div style="font-size:4rem; margin-bottom:1.2rem;">🔐</div>
+            <div style="font-size:2rem; font-weight:800; color:#38bdf8; margin-bottom:0.4rem;">Owner Access Only</div>
+            <p style="color:#94a3b8; font-size:0.95rem; margin-bottom:2rem;">
+                Settings are restricted to the site owner.<br>Enter your access PIN to continue.
+            </p>
+            <div id="gateError" style="display:none; background:rgba(239,68,68,0.15); border:1px solid #ef4444;
+                 color:#fca5a5; padding:0.8rem 1.2rem; border-radius:10px; margin-bottom:1rem;
+                 font-weight:600; font-size:0.9rem;"></div>
+            <input type="password" id="ownerPinInput"
+                placeholder="Enter your secret PIN"
+                style="width:100%; padding:1rem 1.2rem; border-radius:12px;
+                       border:1px solid #1e293b; background:#151f32; color:white;
+                       font-size:1.05rem; font-family:inherit; outline:none;
+                       margin-bottom:1rem; text-align:center; letter-spacing:0.15em;"
+                onkeydown="if(event.key==='Enter') verifyOwnerPin()">
+            <button onclick="verifyOwnerPin()"
+                style="width:100%; padding:1rem; background:linear-gradient(135deg,#4f46e5,#38bdf8);
+                       border:none; border-radius:12px; color:white; font-size:1rem;
+                       font-weight:700; cursor:pointer; font-family:inherit; margin-bottom:1rem;">Unlock &rarr;</button>
+            <a href="dashboard.html" style="color:#94a3b8; font-size:0.88rem; text-decoration:none;">&larr; Back to Dashboard</a>
+        </div>
+    </div>
+
+    <!-- PAGE CONTENT (hidden until owner verified) -->
+    <div id="pageContent" style="display:none;">
+
+    <div class="watermark-bg">INAAM</div>
+
     <nav>
         <a href="dashboard.html" class="brand">Account Settings</a>
         <div class="nav-links">
@@ -547,8 +630,7 @@
                         <span class="faq-icon">+</span>
                     </div>
                     <div class="faq-answer">
-                        You can reach out directly via the contact details on the homepage: email
-                        <strong>domicle672@gmail.com</strong> or call <strong>+91 6006541527</strong>.
+                        For help and technical assistance, please submit an inquiry through your dashboard portal or consult the system administrator.
                     </div>
                 </div>
             </div>
@@ -655,6 +737,25 @@
                 alertBox.style.display = 'none';
             }, 3000);
         });
+
+    </div><!-- end #pageContent -->
+
+    <script>
+        // ── Owner PIN Gate ──
+        function verifyOwnerPin() {
+            var entered = (document.getElementById('ownerPinInput').value || '').trim();
+            if (entered === window.__OWNER_PIN) {
+                document.getElementById('ownerGate').style.display = 'none';
+                document.getElementById('pageContent').style.display = '';
+                try { sessionStorage.setItem('ownerUnlocked', '1'); } catch(e) {}
+            } else {
+                var errEl = document.getElementById('gateError');
+                errEl.textContent = '✗ Incorrect PIN. Try again.';
+                errEl.style.display = 'block';
+                document.getElementById('ownerPinInput').value = '';
+                document.getElementById('ownerPinInput').focus();
+            }
+        }
 
         // Accordion FAQ interaction
         document.querySelectorAll('.faq-question').forEach(header => {

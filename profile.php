@@ -1,7 +1,7 @@
 <?php
 
-session_start();
-include "db.php";
+require_once "db.php";
+check_session_timeout();
 
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
@@ -9,177 +9,173 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 $user_id = $_SESSION["user_id"];
-$user_email = htmlspecialchars($_SESSION["user_email"]);
+$user = db_find_user_by_id($user_id);
+
+if (!$user) {
+    header("Location: logout.php");
+    exit();
+}
+
 $message = "";
 $message_type = "";
 
-// Ensure database columns exist
-if (isset($conn) && $conn && !$conn->connect_error) {
-    @$conn->query("ALTER TABLE users ADD COLUMN name_changed INT DEFAULT 0");
-    @$conn->query("ALTER TABLE users ADD COLUMN profile_image VARCHAR(255) DEFAULT ''");
-}
+// Track page visit
+db_log_page_visit("Profile Page", $user["name"] ?? "User", $user["email"] ?? "");
 
-$name_changed = $_SESSION["name_changed"] ?? 0;
-$profile_image = $_SESSION["profile_image"] ?? "";
+// 1. Handle Profile Info Update
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_profile_info"])) {
+    $name = trim($_POST["name"] ?? "");
+    $contact_no = trim($_POST["contact_no"] ?? "");
+    $role = trim($_POST["role"] ?? "Web Developer");
+    $qualification = trim($_POST["qualification"] ?? "BCA");
+    $parentage = trim($_POST["parentage"] ?? "");
+    $course_enrolled = trim($_POST["course_enrolled"] ?? "BCA");
+    $college = trim($_POST["college"] ?? "");
+    $school = trim($_POST["school"] ?? "");
 
-// Fetch current user data from database if connected
-if (isset($conn) && $conn && !$conn->connect_error) {
-    $stmt = $conn->prepare("SELECT name, name_changed, profile_image FROM users WHERE id = ?");
-    if ($stmt) {
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        if ($row = $res->fetch_assoc()) {
-            $_SESSION["user_name"] = $row["name"];
-            $name_changed = (int)$row["name_changed"];
-            $_SESSION["name_changed"] = $name_changed;
+    if (empty($name)) {
+        $message = "Name cannot be empty.";
+        $message_type = "error";
+    } else {
+        $updates = [
+            "name" => $name,
+            "contact_no" => $contact_no,
+            "role" => $role,
+            "qualification" => $qualification,
+            "parentage" => $parentage,
+            "course_enrolled" => $course_enrolled,
+            "college" => $college,
+            "school" => $school
+        ];
+        db_update_user($user_id, $updates);
 
-            if (!empty($row["profile_image"])) {
-                $profile_image = $row["profile_image"];
-                $_SESSION["profile_image"] = $profile_image;
-            }
-        }
-        $stmt->close();
+        $_SESSION["user_name"] = $name;
+        $_SESSION["user_role"] = $role;
+
+        // Refresh user record
+        $user = db_find_user_by_id($user_id);
+
+        db_log_activity(
+            $user_id,
+            $name,
+            $user["email"] ?? "",
+            "Profile Updated",
+            "Updated contact details, role to {$role}, and qualifications",
+            $contact_no,
+            $role
+        );
+
+        $message = "✓ Profile details updated successfully!";
+        $message_type = "success";
     }
 }
 
-// Handle Profile Picture Upload
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["upload_picture"])) {
-    if (isset($_FILES["profile_pic"]) && $_FILES["profile_pic"]["error"] === UPLOAD_ERR_OK) {
-        $file_tmp = $_FILES["profile_pic"]["tmp_name"];
-        $file_name = $_FILES["profile_pic"]["name"];
-        $file_size = $_FILES["profile_pic"]["size"];
-        $ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+// 2. Handle Base64 Cropped Photo Upload (Requirement 6)
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cropped_image_data"])) {
+    $imgData = $_POST["cropped_image_data"];
+    if (preg_match('/^data:image\/(\w+);base64,/', $imgData, $type)) {
+        $imgData = substr($imgData, strpos($imgData, ',') + 1);
+        $type = strtolower($type[1]); // jpg, png, etc.
 
-        $allowed_exts = ["jpg", "jpeg", "png", "webp", "gif"];
-
-        if (!in_array($ext, $allowed_exts)) {
-            $message = "Invalid image type. Please upload a JPG, PNG, WEBP, or GIF.";
-            $message_type = "error";
-        } elseif ($file_size > 5 * 1024 * 1024) {
-            $message = "Image size too large. Maximum allowed size is 5MB.";
-            $message_type = "error";
-        } else {
+        $decodedData = base64_decode($imgData);
+        if ($decodedData !== false) {
             $upload_dir = __DIR__ . "/uploads/";
             if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0777, true);
+                @mkdir($upload_dir, 0777, true);
             }
 
-            $new_filename = "avatar_" . $user_id . "_" . time() . "." . $ext;
+            $new_filename = "avatar_" . $user_id . "_" . time() . ".png";
             $dest_path = $upload_dir . $new_filename;
 
-            if (move_uploaded_file($file_tmp, $dest_path)) {
-                $profile_image = "uploads/" . $new_filename;
-                $_SESSION["profile_image"] = $profile_image;
+            if (file_put_contents($dest_path, $decodedData)) {
+                $relative_path = "uploads/" . $new_filename;
+                db_update_user($user_id, ["profile_image" => $relative_path]);
+                $_SESSION["profile_image"] = $relative_path;
+                $user["profile_image"] = $relative_path;
 
-                if (isset($conn) && $conn && !$conn->connect_error) {
-                    $up = $conn->prepare("UPDATE users SET profile_image = ? WHERE id = ?");
-                    if ($up) {
-                        $up->bind_param("si", $profile_image, $user_id);
-                        $up->execute();
-                        $up->close();
-                    }
-                }
-                $message = "✅ Profile picture uploaded and updated successfully!";
+                db_log_activity(
+                    $user_id,
+                    $user["name"] ?? "User",
+                    $user["email"] ?? "",
+                    "Profile Photo Cropped & Saved",
+                    "Uploaded newly cropped profile avatar",
+                    $user["contact_no"] ?? "",
+                    $user["role"] ?? ""
+                );
+
+                $message = "✓ Profile photo successfully cropped and updated!";
                 $message_type = "success";
             } else {
-                $message = "Failed to save uploaded picture. Please check folder permissions.";
+                $message = "Could not save cropped photo to uploads directory.";
                 $message_type = "error";
             }
         }
-    } else {
-        $message = "Please select an image file to upload.";
-        $message_type = "error";
     }
 }
 
-// Handle Remove Profile Picture
+// 3. Handle Remove Picture
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["remove_picture"])) {
-    $profile_image = "";
+    db_update_user($user_id, ["profile_image" => ""]);
     $_SESSION["profile_image"] = "";
+    $user["profile_image"] = "";
 
-    if (isset($conn) && $conn && !$conn->connect_error) {
-        $up = $conn->prepare("UPDATE users SET profile_image = '' WHERE id = ?");
-        if ($up) {
-            $up->bind_param("i", $user_id);
-            $up->execute();
-            $up->close();
-        }
-    }
+    db_log_activity(
+        $user_id,
+        $user["name"] ?? "User",
+        $user["email"] ?? "",
+        "Profile Photo Removed",
+        "Profile picture reset to default avatar initials",
+        $user["contact_no"] ?? "",
+        $user["role"] ?? ""
+    );
+
     $message = "Profile picture removed.";
     $message_type = "success";
 }
 
-// Handle Name Change Request (1-Time limit)
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_name"])) {
-    $new_name = trim($_POST["new_name"] ?? "");
+$user_name = htmlspecialchars($user["name"] ?? "");
+$user_email = htmlspecialchars($user["email"] ?? "");
+$user_role = htmlspecialchars($user["role"] ?? "Web Developer");
+$contact_no = htmlspecialchars($user["contact_no"] ?? "");
+$qualification = htmlspecialchars($user["qualification"] ?? "BCA");
+$parentage = htmlspecialchars($user["parentage"] ?? "");
+$course_enrolled = htmlspecialchars($user["course_enrolled"] ?? "BCA");
+$college = htmlspecialchars($user["college"] ?? "Universal Group of Management And Technology");
+$school = htmlspecialchars($user["school"] ?? "BHSS Sogam");
+$account_status = htmlspecialchars($user["status"] ?? "Active");
+$login_count = (int)($user["login_count"] ?? 1);
+$logout_count = (int)($user["logout_count"] ?? 0);
+$quiz_score = (int)($user["quiz_score"] ?? 0);
+$profile_image = $user["profile_image"] ?? "";
 
-    if ($name_changed >= 1) {
-        $message = "🔒 You have already changed your username once! No further changes are allowed.";
-        $message_type = "error";
-    } elseif (empty($new_name)) {
-        $message = "Please enter a valid username.";
-        $message_type = "error";
-    } elseif ($new_name === $_SESSION["user_name"]) {
-        $message = "The new username must be different from your current username.";
-        $message_type = "error";
-    } else {
-        if (isset($conn) && $conn && !$conn->connect_error) {
-            $up_stmt = $conn->prepare("UPDATE users SET name = ?, name_changed = 1 WHERE id = ? AND name_changed = 0");
-            if ($up_stmt) {
-                $up_stmt->bind_param("si", $new_name, $user_id);
-                $up_stmt->execute();
-                if ($up_stmt->affected_rows > 0) {
-                    $_SESSION["user_name"] = $new_name;
-                    $_SESSION["name_changed"] = 1;
-                    $name_changed = 1;
-                    $message = "✅ Username successfully changed to '$new_name'! (1/1 limit used — this cannot be changed again).";
-                    $message_type = "success";
-                } else {
-                    $message = "🔒 You have already used your 1 allowed username change.";
-                    $message_type = "error";
-                }
-                $up_stmt->close();
-            }
-        } else {
-            $_SESSION["user_name"] = $new_name;
-            $_SESSION["name_changed"] = 1;
-            $name_changed = 1;
-            $message = "✅ Username successfully changed to '$new_name'! (1/1 limit reached).";
-            $message_type = "success";
-        }
-    }
-}
-
-$user_name = htmlspecialchars($_SESSION["user_name"]);
+$is_admin = is_owner_or_admin();
 
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile - <?php echo $user_name; ?></title>
+    <title>Edit &amp; View Profile - <?php echo $user_name; ?></title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --card-border: #334155;
+            --bg-color: #0b1120;
+            --card-bg: #151f32;
+            --card-border: #1e293b;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --accent: #38bdf8;
             --success: #10b981;
-            --error: #ef4444;
             --warning: #f59e0b;
+            --error: #ef4444;
         }
 
         * {
@@ -194,26 +190,51 @@ $user_name = htmlspecialchars($_SESSION["user_name"]);
             color: var(--text-main);
             min-height: 100vh;
             line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
         }
 
-        /* Navbar */
-        nav {
+        /* Watermark INAAM (Requirement 9) */
+        .watermark-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 16vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.025);
+            letter-spacing: 20px;
+            pointer-events: none;
+            z-index: 0;
+            user-select: none;
+            white-space: nowrap;
+            text-transform: uppercase;
+        }
+
+        /* Top Navbar */
+        nav.navbar {
             background-color: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--card-border);
             padding: 1rem 2rem;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            max-width: 1200px;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            max-width: 1280px;
             margin: 0 auto;
         }
 
         .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.3rem;
+            font-weight: 800;
             color: var(--accent);
             text-decoration: none;
-            font-size: 1.25rem;
-            font-weight: 700;
         }
 
         .nav-links {
@@ -228,530 +249,748 @@ $user_name = htmlspecialchars($_SESSION["user_name"]);
             padding: 0.5rem 0.9rem;
             border-radius: 8px;
             font-size: 0.95rem;
+            font-weight: 500;
             transition: all 0.2s ease;
         }
 
-        .nav-links a:hover,
-        .nav-links a.active {
+        .nav-links a:hover, .nav-links a.active {
             color: white;
-            background: rgba(255, 255, 255, 0.08);
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-logout {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #f87171 !important;
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
         .container {
-            max-width: 800px;
-            margin: 2.5rem auto;
+            max-width: 1100px;
+            margin: 2.5rem auto 4rem;
             padding: 0 1.5rem;
-        }
-
-        .profile-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            margin-bottom: 2rem;
-        }
-
-        .profile-cover {
-            height: 120px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
             position: relative;
-        }
-
-        .profile-body {
-            padding: 0 2rem 2.5rem;
-            position: relative;
-        }
-
-        .avatar-wrap {
-            margin-top: -50px;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-        }
-
-        .avatar-container {
-            position: relative;
-            width: 105px;
-            height: 105px;
-        }
-
-        .avatar-lg {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: #0f172a;
-            border: 4px solid var(--card-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--accent);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-        }
-
-        .avatar-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-        }
-
-        .avatar-camera-btn {
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: var(--primary);
-            color: white;
-            border: 2px solid var(--card-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 0.85rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-            transition: transform 0.2s ease, background 0.2s ease;
-        }
-
-        .avatar-camera-btn:hover {
-            transform: scale(1.1);
-            background: var(--accent);
-            color: #0f172a;
-        }
-
-        .badge-status {
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid var(--success);
-            color: #34d399;
-            padding: 0.35rem 0.9rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .user-title h1 {
-            font-size: 1.8rem;
-            margin-bottom: 0.2rem;
-            color: #ffffff;
-        }
-
-        .user-title p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
+            z-index: 1;
         }
 
         .alert-box {
-            padding: 0.85rem 1.2rem;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            margin: 1.5rem 0 1rem;
+            padding: 0.9rem 1.2rem;
+            border-radius: 12px;
+            font-size: 0.92rem;
+            margin-bottom: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
             font-weight: 500;
         }
 
         .alert-success {
-            background-color: rgba(16, 185, 129, 0.15);
+            background: rgba(16, 185, 129, 0.15);
             border: 1px solid var(--success);
             color: #34d399;
         }
 
         .alert-error {
-            background-color: rgba(239, 68, 68, 0.15);
+            background: rgba(239, 68, 68, 0.15);
             border: 1px solid var(--error);
             color: #f87171;
         }
 
-        /* Section Cards */
-        .feature-box {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
-        }
-
-        .feature-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.8rem;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .feature-header h3 {
-            font-size: 1.1rem;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .change-pill {
-            font-size: 0.8rem;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-weight: 600;
-        }
-
-        .pill-available {
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-            border: 1px solid var(--success);
-        }
-
-        .pill-locked {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            border: 1px solid var(--error);
-        }
-
-        .change-desc {
-            font-size: 0.88rem;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-        }
-
-        /* Form Controls */
-        .flex-form {
-            display: flex;
-            gap: 0.8rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .text-input {
-            flex: 1;
-            min-width: 200px;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--card-border);
-            background-color: #0f172a;
-            color: #ffffff;
-            font-size: 0.95rem;
-            outline: none;
-            font-family: inherit;
-        }
-
-        .text-input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
-        }
-
-        .text-input:disabled {
-            background-color: rgba(15, 23, 42, 0.4);
-            color: #64748b;
-            cursor: not-allowed;
-            border-color: rgba(51, 65, 85, 0.4);
-        }
-
-        .file-upload-input {
-            display: none;
-        }
-
-        .btn-custom {
-            padding: 0.75rem 1.4rem;
-            background: linear-gradient(135deg, var(--primary), #6366f1);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s ease, transform 0.15s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .btn-custom:hover {
-            opacity: 0.95;
-            transform: translateY(-1px);
-        }
-
-        .btn-custom:disabled {
-            background: #334155;
-            color: #94a3b8;
-            cursor: not-allowed;
-            transform: none;
-            opacity: 0.7;
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--card-border);
-            color: #cbd5e1;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-        }
-
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-
-        .btn-danger:hover {
-            background: #ef4444;
-            color: white;
-        }
-
-        .preview-bar {
-            display: none;
-            align-items: center;
-            gap: 1rem;
-            margin-top: 1rem;
-            padding: 0.8rem;
-            background: #0f172a;
-            border-radius: 8px;
-            border: 1px dashed var(--accent);
-        }
-
-        .preview-thumb {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--accent);
-        }
-
-        .details-grid {
+        /* 2-Column Grid for Profile */
+        .profile-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.2rem;
-            margin-top: 1.8rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            grid-template-columns: 340px 1fr;
+            gap: 2rem;
         }
 
-        @media (max-width: 600px) {
-            .details-grid {
+        @media (max-width: 850px) {
+            .profile-grid {
                 grid-template-columns: 1fr;
             }
         }
 
-        .detail-item {
-            background: rgba(15, 23, 42, 0.6);
+        .card {
+            background-color: var(--card-bg);
             border: 1px solid var(--card-border);
-            padding: 1rem 1.2rem;
-            border-radius: 10px;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
         }
 
-        .detail-label {
-            color: var(--text-muted);
-            font-size: 0.82rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.3rem;
+        /* Profile Left Card */
+        .avatar-section {
+            text-align: center;
         }
 
-        .detail-val {
-            color: #ffffff;
-            font-weight: 500;
-            font-size: 1rem;
+        .profile-photo-wrapper {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 1.5rem;
+            border-radius: 50%;
+            padding: 4px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.3);
         }
 
-        .actions {
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #0f172a;
             display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: white;
+            overflow: hidden;
         }
 
-        .btn {
-            padding: 0.75rem 1.4rem;
+        .avatar-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-top: 1rem;
+        }
+
+        .btn-crop-trigger {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            padding: 0.75rem 1.2rem;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-crop-trigger:hover {
+            transform: translateY(-2px);
+            opacity: 0.95;
+        }
+
+        .btn-remove-pic {
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #f87171;
+            padding: 0.6rem 1rem;
             border-radius: 8px;
-            text-decoration: none;
+            font-size: 0.85rem;
             font-weight: 600;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .btn-primary {
+        .btn-remove-pic:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .profile-summary-list {
+            list-style: none;
+            margin-top: 1.8rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            font-size: 0.9rem;
+        }
+
+        .profile-summary-item {
+            display: flex;
+            justify-content: space-between;
+            color: #cbd5e1;
+        }
+
+        /* Profile Right Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+        }
+
+        @media (max-width: 600px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.45rem;
+            font-size: 0.88rem;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background-color: #0b1120;
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.1em;
+            padding-right: 2.5rem;
+        }
+
+        .btn-save {
             background: linear-gradient(135deg, var(--primary), #6366f1);
+            color: white;
+            border: none;
+            padding: 0.9rem 1.8rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            transition: all 0.2s;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            opacity: 0.95;
+        }
+
+        /* ======================================================== */
+        /* PHOTO CROPPER MODAL (Requirement 6)                      */
+        /* ======================================================== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        .crop-modal-content {
+            background: #151f32;
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            max-width: 550px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 0.8rem;
+        }
+
+        .modal-header h3 {
+            font-size: 1.3rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close-btn:hover {
             color: white;
         }
 
-        .btn-outline {
-            border: 1px solid var(--card-border);
-            color: var(--accent);
+        .canvas-container {
+            width: 100%;
+            height: 320px;
+            background: #090e1a;
+            border-radius: 12px;
+            border: 1px dashed var(--card-border);
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .canvas-container:active {
+            cursor: grabbing;
+        }
+
+        #cropCanvas {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+        }
+
+        .crop-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1.2rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .zoom-slider-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .zoom-slider-wrap input[type="range"] {
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .btn-crop-save {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            padding: 0.75rem 1.6rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-crop-save:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .crop-circle-overlay {
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 2px dashed var(--accent);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+            pointer-events: none;
         }
     </style>
 </head>
-
 <body>
 
-    <nav>
-        <a href="dashboard.php" class="brand">INAAM Profile</a>
+    <div class="watermark-bg">INAAM</div>
+
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <a href="dashboard.php" class="brand">
+            <span>INAAM Portal</span>
+            <span style="font-size: 0.75rem; background: rgba(56, 189, 248, 0.15); border: 1px solid var(--accent); color: var(--accent); padding: 2px 8px; border-radius: 6px;">PROFILE</span>
+        </a>
+
         <div class="nav-links">
-            <a href="index.html">Home</a>
-            <a href="dashboard.php">Dashboard</a>
+            <a href="dashboard.php">&larr; Back to Dashboard</a>
             <a href="profile.php" class="active">Profile</a>
             <a href="activity.php">Activity</a>
-            <a href="logout.php" style="color: #f87171;">Logout</a>
+            <a href="logout.php" class="btn-logout">Logout</a>
         </div>
     </nav>
 
     <div class="container">
-        <div class="profile-card">
-            <div class="profile-cover"></div>
-            <div class="profile-body">
-                <div class="avatar-wrap">
-                    <div class="avatar-container">
-                        <div class="avatar-lg" id="avatarDisplay">
-                            <?php if (!empty($profile_image) && file_exists(__DIR__ . "/" . $profile_image)): ?>
-                                <img src="<?php echo htmlspecialchars($profile_image); ?>" alt="Avatar" class="avatar-img">
-                            <?php else: ?>
-                                <span><?php echo strtoupper(substr($user_name, 0, 1)); ?></span>
-                            <?php endif; ?>
-                        </div>
-                        <label for="phpPicInput" class="avatar-camera-btn" title="Change Profile Picture">📷</label>
-                    </div>
-                    <span class="badge-status">Active Account</span>
-                </div>
 
-                <div class="user-title">
-                    <h1><?php echo $user_name; ?></h1>
-                    <p><?php echo $user_email; ?> &bull; Web Development Student</p>
-                </div>
+        <?php if (!empty($message)): ?>
+            <div class="alert-box <?php echo $message_type === 'success' ? 'alert-success' : 'alert-error'; ?>">
+                <span><?php echo $message_type === 'success' ? '✓' : '⚠️'; ?></span>
+                <span><?php echo htmlspecialchars($message); ?></span>
+            </div>
+        <?php endif; ?>
 
-                <?php if (!empty($message)): ?>
-                    <div class="alert-box <?php echo ($message_type === 'success') ? 'alert-success' : 'alert-error'; ?>">
-                        <?php echo htmlspecialchars($message); ?>
-                    </div>
-                <?php endif; ?>
+        <div class="profile-grid">
 
-                <!-- Profile Picture Upload Section -->
-                <div class="feature-box">
-                    <div class="feature-header">
-                        <h3>🖼️ Profile Picture</h3>
-                        <?php if (!empty($profile_image)): ?>
-                            <span class="change-pill pill-available">Photo Set</span>
+            <!-- LEFT CARD: Avatar & Cropper Trigger & Quick Info -->
+            <div class="card avatar-section">
+                
+                <div class="profile-photo-wrapper">
+                    <div class="avatar-img" id="avatarPreviewContainer">
+                        <?php if (!empty($profile_image) && file_exists(__DIR__ . "/" . $profile_image)): ?>
+                            <img src="<?php echo htmlspecialchars($profile_image); ?>" alt="Profile Picture" id="currentAvatarImg">
                         <?php else: ?>
-                            <span class="change-pill pill-available">Default Avatar</span>
+                            <span id="initialsAvatar"><?php echo strtoupper(substr($user_name, 0, 1)); ?></span>
                         <?php endif; ?>
                     </div>
-                    <p class="change-desc">
-                        Personalize your account with a custom profile picture (JPG, PNG, WEBP, or GIF up to 5MB).
-                    </p>
+                </div>
 
-                    <form method="POST" enctype="multipart/form-data" id="photoUploadForm">
-                        <input type="file" name="profile_pic" id="phpPicInput" class="file-upload-input" accept="image/*">
-                        
-                        <div class="flex-form">
-                            <label for="phpPicInput" class="btn-custom btn-secondary">
-                                📁 Choose Picture
-                            </label>
-                            <button type="submit" name="upload_picture" id="btnUploadPic" class="btn-custom" style="display: none;">
-                                ⬆️ Save Picture
+                <h2 style="font-size: 1.4rem; color: white;"><?php echo $user_name; ?></h2>
+                <p style="color: var(--accent); font-weight: 600; font-size: 0.95rem; margin-top: 2px;"><?php echo $user_role; ?></p>
+                <p style="color: var(--text-muted); font-size: 0.85rem;"><?php echo $user_email; ?></p>
+
+                <!-- Hidden file input for Cropper -->
+                <input type="file" id="photoFileInput" accept="image/png, image/jpeg, image/webp" style="display: none;" onchange="handleFileSelected(event)">
+
+                <div class="photo-btn-group">
+                    <button type="button" class="btn-crop-trigger" onclick="document.getElementById('photoFileInput').click()">
+                        <span>✂️</span>
+                        <span>Crop &amp; Upload New Photo</span>
+                    </button>
+
+                    <?php if (!empty($profile_image)): ?>
+                        <form method="POST" style="margin: 0;">
+                            <input type="hidden" name="remove_picture" value="1">
+                            <button type="submit" class="btn-remove-pic" style="width: 100%;" onclick="return confirm('Remove profile picture?')">
+                                Remove Picture
                             </button>
-                            <?php if (!empty($profile_image)): ?>
-                                <button type="submit" name="remove_picture" class="btn-custom btn-danger">
-                                    🗑️ Remove Picture
-                                </button>
-                            <?php endif; ?>
-                        </div>
-
-                        <!-- Live Image Selection Preview -->
-                        <div id="previewContainer" class="preview-bar">
-                            <img id="previewImg" class="preview-thumb" alt="Preview">
-                            <span id="previewName" style="font-size: 0.9rem; color: #cbd5e1; flex: 1;"></span>
-                            <span style="font-size: 0.8rem; color: var(--accent);">Ready to save! Click "Save Picture"</span>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- One-time Name Change Feature -->
-                <div class="feature-box">
-                    <div class="feature-header">
-                        <h3>✏️ Username Settings</h3>
-                        <?php if ($name_changed == 0): ?>
-                            <span class="change-pill pill-available">1 Change Available</span>
-                        <?php else: ?>
-                            <span class="change-pill pill-locked">🔒 Locked (1/1 Used)</span>
-                        <?php endif; ?>
-                    </div>
-
-                    <?php if ($name_changed == 0): ?>
-                        <p class="change-desc">
-                            ⚠️ <strong>Policy Notice:</strong> You are allowed to change your username <strong>only ONE time</strong> after registration. Once submitted, it will be permanently locked!
-                        </p>
-                        <form method="POST" class="flex-form">
-                            <input type="text" name="new_name" class="text-input" placeholder="Enter new username" required minlength="2">
-                            <button type="submit" name="update_name" class="btn-custom">Update Username (1 Left)</button>
                         </form>
-                    <?php else: ?>
-                        <p class="change-desc" style="color: #f87171;">
-                            🔒 <strong>Username Locked:</strong> You have already used your one-time username change. Your username is permanently set to <strong><?php echo $user_name; ?></strong>.
-                        </p>
-                        <div class="flex-form">
-                            <input type="text" class="text-input" value="<?php echo $user_name; ?>" disabled>
-                            <button type="button" class="btn-custom" disabled>🔒 Changes Locked</button>
-                        </div>
                     <?php endif; ?>
                 </div>
 
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <div class="detail-label">User ID</div>
-                        <div class="detail-val">#<?php echo $user_id; ?></div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Username Change Status</div>
-                        <div class="detail-val" style="<?php echo ($name_changed == 0) ? 'color: #34d399;' : 'color: #f87171;'; ?>">
-                            <?php echo ($name_changed == 0) ? 'Available (0/1 used)' : 'Locked (1/1 used)'; ?>
+                <ul class="profile-summary-list">
+                    <li class="profile-summary-item">
+                        <span style="color: var(--text-muted);">Account Status:</span>
+                        <span style="color: #34d399; font-weight: 600;">Active &amp; Verified</span>
+                    </li>
+                    <li class="profile-summary-item">
+                        <span style="color: var(--text-muted);">Total Logins:</span>
+                        <span style="font-weight: 600;"><?php echo $login_count; ?> times</span>
+                    </li>
+                    <li class="profile-summary-item">
+                        <span style="color: var(--text-muted);">Total Logouts:</span>
+                        <span style="font-weight: 600;"><?php echo $logout_count; ?> times</span>
+                    </li>
+                    <li class="profile-summary-item">
+                        <span style="color: var(--text-muted);">Quiz Assessment:</span>
+                        <span style="color: var(--accent); font-weight: 700;"><?php echo $quiz_score; ?> / 20</span>
+                    </li>
+                </ul>
+
+            </div>
+
+            <!-- RIGHT CARD: Profile Details Editor (Requirement 6 & 17) -->
+            <div class="card">
+                <h2 style="font-size: 1.4rem; color: white; margin-bottom: 0.4rem;">Edit Profile Details</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.8rem;">
+                    Update your personal information, role, and qualifications below.
+                </p>
+
+                <form method="POST">
+                    <input type="hidden" name="update_profile_info" value="1">
+
+                    <div class="form-grid">
+                        
+                        <!-- Full Name -->
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" name="name" value="<?php echo $user_name; ?>" required>
                         </div>
+
+                        <!-- Email Address (Readonly / Protected) -->
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" value="<?php echo $user_email; ?>" readonly style="opacity: 0.7; cursor: not-allowed;">
+                        </div>
+
+                        <!-- Contact Number (Phone) -->
+                        <div class="form-group">
+                            <label>Contact Number (Phone) *</label>
+                            <input type="tel" name="contact_no" value="<?php echo $contact_no; ?>" placeholder="+91 9876543210" required>
+                        </div>
+
+                        <!-- Role (Web Developer / Web Programming / Fresher) -->
+                        <div class="form-group">
+                            <label>Role in Dashboard *</label>
+                            <select name="role" required>
+                                <option value="Web Developer" <?php echo ($user_role === "Web Developer") ? "selected" : ""; ?>>Web Developer</option>
+                                <option value="Web Programming" <?php echo ($user_role === "Web Programming") ? "selected" : ""; ?>>Web Programming</option>
+                                <option value="Fresher" <?php echo ($user_role === "Fresher") ? "selected" : ""; ?>>Fresher</option>
+                            </select>
+                        </div>
+
+                        <!-- Qualification -->
+                        <div class="form-group">
+                            <label>Qualification *</label>
+                            <select name="qualification" required>
+                                <option value="BCA" <?php echo ($qualification === "BCA") ? "selected" : ""; ?>>BCA (Bachelor of Computer Applications)</option>
+                                <option value="12th" <?php echo ($qualification === "12th") ? "selected" : ""; ?>>12th Standard</option>
+                                <option value="11th" <?php echo ($qualification === "11th") ? "selected" : ""; ?>>11th Standard</option>
+                                <option value="10th" <?php echo ($qualification === "10th") ? "selected" : ""; ?>>10th Standard</option>
+                                <option value="B.Tech" <?php echo ($qualification === "B.Tech") ? "selected" : ""; ?>>B.Tech / B.E.</option>
+                                <option value="MCA" <?php echo ($qualification === "MCA") ? "selected" : ""; ?>>MCA / M.Sc</option>
+                                <option value="Graduate" <?php echo ($qualification === "Graduate") ? "selected" : ""; ?>>Other Graduate</option>
+                            </select>
+                        </div>
+
+                        <!-- Parentage -->
+                        <div class="form-group">
+                            <label>Parentage (Father / Guardian) *</label>
+                            <input type="text" name="parentage" value="<?php echo $parentage; ?>" placeholder="Father or Guardian Name" required>
+                        </div>
+
+                        <!-- Course Enrolled -->
+                        <div class="form-group">
+                            <label>Course Enrolled *</label>
+                            <input type="text" name="course_enrolled" value="<?php echo $course_enrolled; ?>" placeholder="e.g. BCA or Full Stack Development" required>
+                        </div>
+
+                        <!-- College -->
+                        <div class="form-group">
+                            <label>College / Institute</label>
+                            <input type="text" name="college" value="<?php echo $college; ?>">
+                        </div>
+
+                        <!-- School -->
+                        <div class="form-group full-width">
+                            <label>School</label>
+                            <input type="text" name="school" value="<?php echo $school; ?>">
+                        </div>
+
                     </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Enrolled Degree</div>
-                        <div class="detail-val">BCA (2024 - 2028)</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">College</div>
-                        <div class="detail-val">Universal Group of Mgmt. &amp; Tech.</div>
-                    </div>
+
+                    <button type="submit" class="btn-save">Save Profile Changes &rarr;</button>
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- INTERACTIVE PHOTO CROPPING MODAL (Requirement 6)          -->
+    <!-- ======================================================== -->
+    <div class="modal-overlay" id="cropModal">
+        <div class="crop-modal-content">
+            <div class="modal-header">
+                <h3><span>✂️</span> <span>Crop Your Profile Photo</span></h3>
+                <button type="button" class="modal-close-btn" onclick="closeCropModal()">&times;</button>
+            </div>
+
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1rem;">
+                Drag to reposition and use the zoom slider to adjust your photo inside the circular frame.
+            </p>
+
+            <div class="canvas-container" id="canvasWrapper">
+                <canvas id="cropCanvas" width="400" height="400"></canvas>
+                <div class="crop-circle-overlay"></div>
+            </div>
+
+            <div class="crop-controls">
+                <div class="zoom-slider-wrap">
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">Zoom:</span>
+                    <input type="range" id="zoomRange" min="0.5" max="3" step="0.05" value="1" oninput="onZoomChange(this.value)">
                 </div>
 
-                <div class="actions">
-                    <a href="dashboard.php" class="btn btn-primary">&larr; Back to Dashboard</a>
-                    <a href="activity.php" class="btn btn-outline">⚡ User Activity</a>
-                    <a href="index.html" class="btn btn-outline">Visit Website</a>
-                </div>
+                <button type="button" class="btn-crop-save" onclick="applyAndSaveCrop()">
+                    Crop &amp; Save Avatar &rarr;
+                </button>
             </div>
+
+            <!-- Form to submit cropped Base64 to server -->
+            <form id="croppedUploadForm" method="POST" style="display: none;">
+                <input type="hidden" name="cropped_image_data" id="croppedImageDataInput">
+            </form>
         </div>
     </div>
 
     <script>
-        const picInput = document.getElementById('phpPicInput');
-        const previewContainer = document.getElementById('previewContainer');
-        const previewImg = document.getElementById('previewImg');
-        const previewName = document.getElementById('previewName');
-        const btnUploadPic = document.getElementById('btnUploadPic');
+        // Interactive Canvas Cropper Implementation
+        let rawImage = null;
+        let imgX = 0;
+        let imgY = 0;
+        let imgScale = 1;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
 
-        picInput.addEventListener('change', function () {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    previewImg.src = e.target.result;
-                    previewName.textContent = file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
-                    previewContainer.style.display = 'flex';
-                    btnUploadPic.style.display = 'inline-flex';
+        const canvas = document.getElementById('cropCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+
+        function handleFileSelected(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                rawImage = new Image();
+                rawImage.onload = function() {
+                    openCropModal();
                 };
-                reader.readAsDataURL(file);
+                rawImage.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function openCropModal() {
+            document.getElementById('cropModal').style.display = 'flex';
+            // Center image in canvas
+            imgScale = Math.max(canvas.width / rawImage.width, canvas.height / rawImage.height);
+            document.getElementById('zoomRange').value = imgScale;
+            imgX = (canvas.width - rawImage.width * imgScale) / 2;
+            imgY = (canvas.height - rawImage.height * imgScale) / 2;
+            drawCanvas();
+        }
+
+        function closeCropModal() {
+            document.getElementById('cropModal').style.display = 'none';
+            document.getElementById('photoFileInput').value = '';
+        }
+
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!rawImage) return;
+
+            ctx.drawImage(
+                rawImage,
+                imgX,
+                imgY,
+                rawImage.width * imgScale,
+                rawImage.height * imgScale
+            );
+        }
+
+        function onZoomChange(val) {
+            const prevScale = imgScale;
+            imgScale = parseFloat(val);
+
+            // Zoom centered on canvas middle
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            imgX = centerX - (centerX - imgX) * (imgScale / prevScale);
+            imgY = centerY - (centerY - imgY) * (imgScale / prevScale);
+
+            drawCanvas();
+        }
+
+        // Mouse drag listeners
+        canvasWrapper.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - imgX;
+            startY = e.clientY - imgY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            imgX = e.clientX - startX;
+            imgY = e.clientY - startY;
+            drawCanvas();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Touch drag listeners for mobile
+        canvasWrapper.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX - imgX;
+                startY = e.touches[0].clientY - imgY;
             }
         });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            imgX = e.touches[0].clientX - startX;
+            imgY = e.touches[0].clientY - startY;
+            drawCanvas();
+        });
+
+        window.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        function applyAndSaveCrop() {
+            // Create circular cropped off-screen canvas (300x300)
+            const exportCanvas = document.createElement('canvas');
+            const size = 300;
+            exportCanvas.width = size;
+            exportCanvas.height = size;
+            const eCtx = exportCanvas.getContext('2d');
+
+            // Circular clip mask
+            eCtx.beginPath();
+            eCtx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+            eCtx.closePath();
+            eCtx.clip();
+
+            // The crop circle in our 400x400 canvas has diameter 220, center at (200, 200)
+            const cropCenterX = canvas.width / 2;
+            const cropCenterY = canvas.height / 2;
+            const cropRadius = 110;
+
+            const sx = cropCenterX - cropRadius;
+            const sy = cropCenterY - cropRadius;
+            const sWidth = cropRadius * 2;
+            const sHeight = cropRadius * 2;
+
+            eCtx.drawImage(
+                canvas,
+                sx, sy, sWidth, sHeight,
+                0, 0, size, size
+            );
+
+            const base64Data = exportCanvas.toDataURL('image/png');
+            document.getElementById('croppedImageDataInput').value = base64Data;
+            document.getElementById('croppedUploadForm').submit();
+        }
+
+        // 10-Minute session timeout (Requirement 19)
+        (function() {
+            const TIMEOUT_MS = 10 * 60 * 1000;
+            let idleTimer = setTimeout(() => { window.location.href = 'login.php?timeout=1'; }, TIMEOUT_MS);
+            ['mousemove', 'keydown', 'click'].forEach(evt => {
+                window.addEventListener(evt, () => {
+                    clearTimeout(idleTimer);
+                    idleTimer = setTimeout(() => { window.location.href = 'login.php?timeout=1'; }, TIMEOUT_MS);
+                }, { passive: true });
+            });
+        })();
     </script>
 
 </body>
-
 </html>

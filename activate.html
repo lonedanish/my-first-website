@@ -38,6 +38,24 @@
             align-items: center;
             min-height: 100vh;
             padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .watermark-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 16vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.025);
+            letter-spacing: 20px;
+            pointer-events: none;
+            z-index: 0;
+            user-select: none;
+            white-space: nowrap;
+            text-transform: uppercase;
         }
 
         .card {
@@ -106,6 +124,7 @@
     </style>
 </head>
 <body>
+    <div class="watermark-bg">INAAM</div>
 
     <div class="card">
         <div id="iconBox" class="icon-wrap icon-success">✓</div>

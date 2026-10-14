@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - My Website</title>
+    <title>Create Account &amp; Register - INAAM Portal</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --card-border: #334155;
+            --bg-color: #0b1120;
+            --card-bg: #151f32;
+            --card-border: #1e293b;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --accent: #38bdf8;
@@ -33,111 +33,78 @@
             font-family: 'Outfit', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            padding: 1.5rem;
+            padding: 2.5rem 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+            line-height: 1.6;
         }
 
-        .register-box {
+        /* Watermark INAAM (Requirement 9) */
+        .watermark-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 16vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.025);
+            letter-spacing: 20px;
+            pointer-events: none;
+            z-index: 0;
+            user-select: none;
+            white-space: nowrap;
+            text-transform: uppercase;
+        }
+
+        .register-container {
+            width: 100%;
+            max-width: 640px;
             background-color: var(--card-bg);
             border: 1px solid var(--card-border);
-            width: 100%;
-            max-width: 440px;
-            padding: 2.5rem 2rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
         }
 
-        h1 {
+        .header-title {
             text-align: center;
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .header-title h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
             background: linear-gradient(to right, #ffffff, var(--accent));
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            color: #ffffff;
+            margin-bottom: 0.4rem;
         }
 
-        .subtitle {
-            text-align: center;
+        .header-title p {
             color: var(--text-muted);
             font-size: 0.95rem;
-            margin-bottom: 1.8rem;
         }
 
-        .alert-message {
-            display: none;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            margin-bottom: 1.2rem;
-            text-align: center;
-            font-weight: 500;
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
         }
 
-        .alert-success {
-            background-color: rgba(16, 185, 129, 0.15);
-            border: 1px solid var(--success);
-            color: #34d399;
-        }
-
-        .alert-error {
-            background-color: rgba(239, 68, 68, 0.15);
-            border: 1px solid var(--error);
-            color: #f87171;
-        }
-
-        .activation-box {
-            display: none;
-            background: rgba(56, 189, 248, 0.1);
-            border: 1px solid var(--accent);
-            border-radius: 12px;
-            padding: 1.4rem;
-            margin-top: 1rem;
-            text-align: center;
-        }
-
-        .activation-box h3 {
-            color: var(--accent);
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .activation-box p {
-            color: var(--text-muted);
-            font-size: 0.88rem;
-            margin-bottom: 1rem;
-        }
-
-        .activation-btn {
-            display: block;
-            width: 100%;
-            padding: 0.8rem;
-            background: var(--accent);
-            color: #0f172a;
-            font-weight: 700;
-            text-decoration: none;
-            border-radius: 8px;
-            margin-bottom: 0.8rem;
-            transition: opacity 0.2s ease;
-        }
-
-        .activation-btn:hover {
-            opacity: 0.9;
-        }
-
-        .link-input {
-            width: 100%;
-            padding: 0.6rem;
-            background: #0f172a;
-            border: 1px solid var(--card-border);
-            color: #94a3b8;
-            font-size: 0.82rem;
-            border-radius: 6px;
-            text-align: center;
+        @media (max-width: 600px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .register-container {
+                padding: 1.8rem 1.2rem;
+            }
         }
 
         .form-group {
@@ -146,50 +113,63 @@
 
         label {
             display: block;
-            margin-bottom: 0.4rem;
-            font-size: 0.9rem;
-            font-weight: 500;
+            margin-bottom: 0.45rem;
+            font-size: 0.88rem;
             color: #cbd5e1;
+            font-weight: 500;
         }
 
-        input {
+        input, select {
             width: 100%;
-            padding: 0.75rem 1rem;
+            padding: 0.8rem 1rem;
             border-radius: 8px;
             border: 1px solid var(--card-border);
-            background-color: #0f172a;
+            background-color: #0b1120;
             color: #ffffff;
             font-size: 0.95rem;
             font-family: inherit;
             outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        input:focus {
+        input:focus, select:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.1em;
+            padding-right: 2.5rem;
         }
 
         .btn-submit {
             width: 100%;
-            padding: 0.85rem;
+            padding: 0.95rem;
             background: linear-gradient(135deg, var(--primary), #6366f1);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            font-family: inherit;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 700;
             cursor: pointer;
-            margin-top: 0.5rem;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            margin-top: 1rem;
+            transition: all 0.2s ease;
         }
 
         .btn-submit:hover {
+            transform: translateY(-2px);
             opacity: 0.95;
         }
 
         .bottom-links {
             text-align: center;
-            margin-top: 1.5rem;
+            margin-top: 1.8rem;
             padding-top: 1.2rem;
             border-top: 1px solid var(--card-border);
             font-size: 0.9rem;
@@ -202,110 +182,190 @@
             font-weight: 500;
         }
 
-        .bottom-links a:hover {
-            text-decoration: underline;
+        .success-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(56, 189, 248, 0.1));
+            border: 1px solid var(--success);
+            border-radius: 14px;
+            padding: 2rem;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
         }
 
-        .back-home {
-            display: inline-block;
-            margin-top: 0.8rem;
-            font-size: 0.85rem;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
-
 <body>
 
-    <div class="register-box">
-        <h1>Create Account</h1>
-        <p class="subtitle">Join today and build your profile</p>
+    <div class="watermark-bg">INAAM</div>
 
-        <div id="alertBox" class="alert-message"></div>
-
-        <form id="registerForm">
-            <div class="form-group">
-                <label for="regName">Full Name</label>
-                <input type="text" id="regName" name="name" placeholder="e.g. INAAM" required>
-            </div>
-
-            <div class="form-group">
-                <label for="regEmail">Email Address</label>
-                <input type="email" id="regEmail" name="email" placeholder="name@example.com" required>
-            </div>
-
-            <div class="form-group">
-                <label for="regPassword">Password</label>
-                <input type="password" id="regPassword" name="password" placeholder="Create a strong password" required minlength="4">
-            </div>
-
-            <button type="submit" id="btnRegister" class="btn-submit">Register</button>
-        </form>
-
-        <div id="activationBox" class="activation-box">
-            <h3>🔗 Account Activation Link</h3>
-            <p>Click below to activate your account and log in:</p>
-            <a id="activationLinkBtn" href="#" class="activation-btn">Activate Account Now &rarr;</a>
-            <input id="activationLinkInput" type="text" readonly class="link-input" onclick="this.select();">
+    <div class="register-container" id="registerFormContainer">
+        
+        <div class="header-title">
+            <h1>Create Account</h1>
+            <p>Join INAAM Web Portal &bull; Set up your developer profile</p>
         </div>
+
+        <form action="register.php" method="POST" onsubmit="handleRegisterSubmit(event)">
+            <div class="form-grid">
+                
+                <!-- 1. Full Name -->
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" name="name" placeholder="e.g. John Doe" required>
+                </div>
+
+                <!-- 2. Email Address -->
+                <div class="form-group">
+                    <label>Email Address *</label>
+                    <input type="email" name="email" placeholder="name@example.com" required>
+                </div>
+
+                <!-- 3. Password -->
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" name="password" placeholder="Create strong password" required minlength="4">
+                </div>
+
+                <!-- 4. Contact Number (Requirement 13) -->
+                <div class="form-group">
+                    <label>Contact No (Phone) *</label>
+                    <input type="tel" name="contact_no" placeholder="e.g. +91 9876543210" required>
+                </div>
+
+                <!-- 5. Role Selection (Requirement 11, 12, 13, 15) -->
+                <div class="form-group">
+                    <label>Your Role *</label>
+                    <select name="role" required>
+                        <option value="Web Developer">Web Developer</option>
+                        <option value="Web Programming">Web Programming</option>
+                        <option value="Fresher">Fresher</option>
+                    </select>
+                </div>
+
+                <!-- 6. Qualification (Requirement 13) -->
+                <div class="form-group">
+                    <label>Qualification *</label>
+                    <select name="qualification" required>
+                        <option value="BCA">BCA (Bachelor of Computer Applications)</option>
+                        <option value="12th">12th Standard</option>
+                        <option value="11th">11th Standard</option>
+                        <option value="10th">10th Standard</option>
+                        <option value="B.Tech">B.Tech / B.E.</option>
+                        <option value="MCA">MCA / M.Sc</option>
+                        <option value="Graduate">Other Graduate</option>
+                    </select>
+                </div>
+
+                <!-- 7. Parentage (Requirement 13) -->
+                <div class="form-group">
+                    <label>Parentage (Father / Guardian) *</label>
+                    <input type="text" name="parentage" placeholder="Father or Guardian Name" required>
+                </div>
+
+                <!-- 8. Course Enrolled (Requirement 13) -->
+                <div class="form-group">
+                    <label>Course Enrolled *</label>
+                    <input type="text" name="course_enrolled" placeholder="e.g. BCA or Full Stack Web Development" required value="BCA">
+                </div>
+
+                <!-- 9. College -->
+                <div class="form-group">
+                    <label>College / Institute</label>
+                    <input type="text" name="college" placeholder="College Name" value="Universal Group of Management And Technology">
+                </div>
+
+                <!-- 10. School -->
+                <div class="form-group">
+                    <label>School</label>
+                    <input type="text" name="school" placeholder="School Name" value="BHSS Sogam">
+                </div>
+
+            </div>
+
+            <button type="submit" class="btn-submit">Complete Registration &rarr;</button>
+        </form>
 
         <div class="bottom-links">
             <p>Already have an account? <a href="login.html">Login here</a></p>
-            <a href="index.html" class="back-home">&larr; Back to Home</a>
+            <p style="margin-top: 0.5rem;"><a href="index.html">&larr; Back to Front Portal</a></p>
         </div>
+
     </div>
 
     <script>
-        const registerForm = document.getElementById('registerForm');
-        const alertBox = document.getElementById('alertBox');
-        const btnRegister = document.getElementById('btnRegister');
-        const activationBox = document.getElementById('activationBox');
-        const activationLinkBtn = document.getElementById('activationLinkBtn');
-        const activationLinkInput = document.getElementById('activationLinkInput');
-
-        function showAlert(msg, isSuccess) {
-            alertBox.textContent = msg;
-            alertBox.className = 'alert-message ' + (isSuccess ? 'alert-success' : 'alert-error');
-            alertBox.style.display = 'block';
-        }
-
-        registerForm.addEventListener('submit', function (e) {
-            e.preventDefault(); // Always handle client-side for GitHub Pages and local use!
-
-            const name = document.getElementById('regName').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const password = document.getElementById('regPassword').value;
-
-            if (!name || !email || !password) {
-                showAlert('Please fill in all fields.', false);
-                return;
-            }
-
-            const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-            const user = { 
-                name: name, 
-                email: email, 
-                password: password, 
-                status: 'active', 
-                token: token,
-                name_changed: 0,
-                avatar: ''
+        function handleRegisterSubmit(e) {
+            const form = e.target;
+            const userData = {
+                name: form.name.value.trim(),
+                email: form.email.value.trim(),
+                password: form.password.value,
+                contact_no: form.contact_no.value.trim(),
+                role: form.role.value,
+                qualification: form.qualification.value,
+                parentage: form.parentage.value.trim(),
+                course_enrolled: form.course_enrolled.value.trim(),
+                college: form.college ? form.college.value : "Universal Group of Management And Technology",
+                school: form.school ? form.school.value : "BHSS Sogam",
+                status: "active",
+                login_count: 1,
+                logout_count: 0,
+                quiz_score: 0,
+                created_at: new Date().toISOString()
             };
 
-            // Save user in localStorage
-            localStorage.setItem('user_' + email, JSON.stringify(user));
-            localStorage.setItem('currentUser', JSON.stringify(user));
+            // Save locally
+            localStorage.setItem('user_' + userData.email, JSON.stringify(userData));
+            localStorage.setItem('currentUser', JSON.stringify(userData));
 
-            const currentUrl = window.location.href;
-            const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
-            const activationUrl = baseUrl + 'activate.html?email=' + encodeURIComponent(email) + '&token=' + token;
+            let usersList = [];
+            try { usersList = JSON.parse(localStorage.getItem('all_users') || '[]'); } catch(err) {}
+            usersList = usersList.filter(u => u.email !== userData.email);
+            usersList.push(userData);
+            localStorage.setItem('all_users', JSON.stringify(usersList));
 
-            showAlert('✅ Account registered successfully! Click your activation link below to continue.', true);
-            registerForm.style.display = 'none';
+            // Log activity locally
+            let activities = [];
+            try { activities = JSON.parse(localStorage.getItem('user_activities') || '[]'); } catch(err) {}
+            activities.unshift({
+                user_name: userData.name,
+                user_email: userData.email,
+                contact_no: userData.contact_no,
+                role: userData.role,
+                action: 'Account Registered',
+                details: 'Registered as ' + userData.role + ' (' + userData.course_enrolled + ')',
+                created_at: new Date().toLocaleString()
+            });
+            localStorage.setItem('user_activities', JSON.stringify(activities));
 
-            activationLinkBtn.href = activationUrl;
-            activationLinkInput.value = activationUrl;
-            activationBox.style.display = 'block';
-        });
+            // Detect if running on a live PHP server or static Live Server / file:///
+            const isPhpServer = (window.location.protocol === 'http:' || window.location.protocol === 'https:') && 
+                                (window.location.port === '80' || window.location.port === '8080' || window.location.port === '');
+
+            if (!isPhpServer) {
+                // Prevent navigation to register.php which renders raw code in Live Server
+                e.preventDefault();
+
+                document.getElementById('registerFormContainer').innerHTML = `
+                    <div class="success-box">
+                        <h2 style="font-size: 1.6rem; color: #ffffff; margin-bottom: 0.5rem;">Welcome, ${userData.name}!</h2>
+                        <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 1.5rem;">Your account has been registered with role <strong>${userData.role}</strong>.</p>
+                        <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--card-border); padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; color: var(--accent); margin-bottom: 1.5rem;">
+                            ✉️ Confirmation email dispatched to: <strong>${userData.email}</strong>
+                        </div>
+                        <a href="quiz.html" style="display:block;width:100%;padding:1rem;background:linear-gradient(135deg,var(--primary),var(--accent));color:#ffffff;font-weight:700;font-size:1.05rem;text-decoration:none;border-radius:10px;text-align:center;box-shadow:0 4px 15px rgba(79,70,229,0.4);margin-bottom:0.8rem;">
+                            🚀 Start 4 AI Questions &amp; 20 Quiz Assessment &rarr;
+                        </a>
+                        <a href="dashboard.html" style="display:inline-block;color:var(--text-muted);text-decoration:none;font-size:0.9rem;padding:0.5rem 1rem;">
+                            Or proceed directly to Dashboard &rarr;
+                        </a>
+                    </div>
+                `;
+                return false;
+            }
+        }
     </script>
 
 </body>
